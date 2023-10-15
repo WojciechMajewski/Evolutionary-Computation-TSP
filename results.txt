@@ -1,0 +1,64 @@
+Dataset 1
+Random
+Min 242222
+Max 296032
+Avg 264109.36
+
+Nearest Neighbour
+Min 84524
+Max 95060
+Avg 87725.4
+
+Greedy Cycle
+Min 75726
+Max 80376
+Avg 77141.41
+
+Dataset 2
+Random
+Min 245293
+Max 292259
+Avg 266050.475
+
+Nearest Neighbour
+Min 77602
+Max 82688
+Avg 79315.37
+
+Greedy Cycle
+Min 68803
+Max 76380
+Avg 70787.49
+
+Dataset 3
+Random
+Min 189471
+Max 244433
+Avg 214218.76
+
+Nearest Neighbour
+Min 56352
+Max 63744
+Avg 58926.12
+
+Greedy Cycle
+Min 53527
+Max 58927
+Avg 55899.45
+
+Dataset 4
+Random
+Min 199056
+Max 249260
+Avg 220243.665
+
+Nearest Neighbour
+Min 50393
+Max 59904
+Avg 54356.305
+
+Greedy Cycle
+Min 50288
+Max 60050
+Avg 54863.735
+
