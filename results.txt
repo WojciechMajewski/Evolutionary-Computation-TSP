@@ -1,8 +1,8 @@
 Dataset 1
 Random
-Min 242222
-Max 296032
-Avg 264109.36
+Min 235486
+Max 293334
+Avg 264631.34
 
 Nearest Neighbour
 Min 84524
@@ -16,9 +16,9 @@ Avg 77141.41
 
 Dataset 2
 Random
-Min 245293
-Max 292259
-Avg 266050.475
+Min 243489
+Max 288916
+Avg 266435.76
 
 Nearest Neighbour
 Min 77602
@@ -32,9 +32,9 @@ Avg 70787.49
 
 Dataset 3
 Random
-Min 189471
-Max 244433
-Avg 214218.76
+Min 193252
+Max 239163
+Avg 215701.855
 
 Nearest Neighbour
 Min 56352
@@ -48,9 +48,9 @@ Avg 55899.45
 
 Dataset 4
 Random
-Min 199056
-Max 249260
-Avg 220243.665
+Min 193380
+Max 244185
+Avg 219035.965
 
 Nearest Neighbour
 Min 50393
