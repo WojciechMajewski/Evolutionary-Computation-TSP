@@ -19,6 +19,11 @@ Min 329322
 Max 0
 Avg 329322.0
 
+Weighted Sum Criterion
+Min 329322
+Max 0
+Avg 329322.0
+
 Dataset 2
 Random
 Min 273916
@@ -36,6 +41,11 @@ Max 0
 Avg 68953.0
 
 Regret Cycle
+Min 363961
+Max 0
+Avg 363961.0
+
+Weighted Sum Criterion
 Min 363961
 Max 0
 Avg 363961.0
@@ -61,6 +71,11 @@ Min 275625
 Max 0
 Avg 275625.0
 
+Weighted Sum Criterion
+Min 275625
+Max 0
+Avg 275625.0
+
 Dataset 4
 Random
 Min 226536
@@ -78,6 +93,11 @@ Max 0
 Avg 57705.0
 
 Regret Cycle
+Min 313814
+Max 0
+Avg 313814.0
+
+Weighted Sum Criterion
 Min 313814
 Max 0
 Avg 313814.0
