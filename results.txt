@@ -1,104 +1,40 @@
-Dataset 1
-Random
-Min 260541
-Max 0
-Avg 260541.0
-
-Nearest Neighbour
-Min 87429
-Max 0
-Avg 87429.0
-
-Greedy Cycle
-Min 76691
-Max 0
-Avg 76691.0
-
 Regret Cycle
-Min 329322
-Max 0
-Avg 329322.0
+Min 109133
+Max 121668
+Avg 115603.44
 
 Weighted Sum Criterion
-Min 329322
-Max 0
-Avg 329322.0
-
-Dataset 2
-Random
-Min 273916
-Max 0
-Avg 273916.0
-
-Nearest Neighbour
-Min 78913
-Max 0
-Avg 78913.0
-
-Greedy Cycle
-Min 68953
-Max 0
-Avg 68953.0
+Min 74945
+Max 78049
+Avg 76407.76
 
 Regret Cycle
-Min 363961
-Max 0
-Avg 363961.0
+Min 114795
+Max 126589
+Avg 119451.0
 
 Weighted Sum Criterion
-Min 363961
-Max 0
-Avg 363961.0
-
-Dataset 3
-Random
-Min 223504
-Max 0
-Avg 223504.0
-
-Nearest Neighbour
-Min 58939
-Max 0
-Avg 58939.0
-
-Greedy Cycle
-Min 55298
-Max 0
-Avg 55298.0
+Min 70153
+Max 75694
+Avg 71455.96
 
 Regret Cycle
-Min 275625
-Max 0
-Avg 275625.0
+Min 65141
+Max 71649
+Avg 68471.0
 
 Weighted Sum Criterion
-Min 275625
-Max 0
-Avg 275625.0
-
-Dataset 4
-Random
-Min 226536
-Max 0
-Avg 226536.0
-
-Nearest Neighbour
-Min 55324
-Max 0
-Avg 55324.0
-
-Greedy Cycle
-Min 57705
-Max 0
-Avg 57705.0
+Min 54126
+Max 57775
+Avg 55983.84
 
 Regret Cycle
-Min 313814
-Max 0
-Avg 313814.0
+Min 68572
+Max 73266
+Avg 70630.6
 
 Weighted Sum Criterion
-Min 313814
-Max 0
-Avg 313814.0
+Min 49522
+Max 58564
+Avg 53790.2
 
