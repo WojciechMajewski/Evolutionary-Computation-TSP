@@ -3,6 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <cstdlib>
+#include <algorithm>
 
 std::vector <std::vector <int>> read_dataset(std::string path) {
     std::ifstream file(path);
@@ -56,11 +58,45 @@ int get_cost(int start_node, int end_node, std::vector <std::vector <int>> & dat
     return distance_matrix[start_node][end_node] + dataset[end_node][2];
 }
 
+int get_path_cost(std::vector <int> & path, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    int cost = 0;
+
+    for(int i = 0; i < path.size(); i++){
+        cost += get_cost(path[i], path[(i+1) % path.size()], dataset, distance_matrix);
+    }
+
+    return cost;
+}
+
+std::vector <int> random_solution(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> path;
+
+    std::vector <int> nodes;
+    for(int i = 0; i < 200; i++){
+        nodes.push_back(i);
+    }
+
+    std::random_shuffle(nodes.begin(), nodes.end());
+
+    for(int i = 0; i < 100; i++){
+        path.push_back(nodes[i]);
+    }
+
+    return path;
+}
+
+
 int main(){
+
+    std::srand(148253);
 
     std::vector <std::vector <int>> dataset_A = read_dataset("Data/TSPA.csv");
 
     std::vector <std::vector <int>> distance_matrix_A = create_distance_matrix(dataset_A);
+
+    std::vector <int> solution_random = random_solution(dataset_A, distance_matrix_A);
+
+    std::cout << get_path_cost(solution_random, dataset_A, distance_matrix_A);
 
     //std::cout << get_cost(0, 1, dataset_A, distance_matrix_A);
 
