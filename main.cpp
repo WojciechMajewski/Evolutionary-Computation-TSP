@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cmath>
 #include <string>
 
 std::vector <std::vector <int>> read_dataset(std::string path) {
@@ -26,18 +27,49 @@ std::vector <std::vector <int>> read_dataset(std::string path) {
     return rows;
 } 
 
+int euclidean_distance(int xa, int ya, int xb, int yb){
+    return std::round(std::sqrt(std::pow(xa - xb, 2) + std::pow(ya - yb, 2)));
+}
+
+std::vector <std::vector <int>> create_distance_matrix(std::vector <std::vector <int>> dataset){
+    std::vector <std::vector <int>> distance_matrix;
+    std::vector <int> row;
+    for(int i = 0; i < dataset.size(); i++){
+        row.push_back(0);
+    }
+    for(int i = 0; i < dataset.size(); i++){
+        distance_matrix.push_back(row);
+    }
+
+    for(int i = 0; i < dataset.size(); i++){
+        for(int j = 0; j < i; j++){
+            int distance = euclidean_distance(dataset[i][0], dataset[i][1], dataset[j][0], dataset[j][1]);
+            distance_matrix[i][j] = distance;
+            distance_matrix[j][i] = distance;
+        }
+    }
+
+    return distance_matrix;
+}
+
+int get_cost(int start_node, int end_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    return distance_matrix[start_node][end_node] + dataset[end_node][2];
+}
 
 int main(){
 
     std::vector <std::vector <int>> dataset_A = read_dataset("Data/TSPA.csv");
 
-    //for(int i = 0; i < dataset_A.size(); i++){
-    //    for(int j = 0; j < dataset_A[i].size(); j++){
-    //        std::cout << dataset_A[i][j];
+    std::vector <std::vector <int>> distance_matrix_A = create_distance_matrix(dataset_A);
+
+    //std::cout << get_cost(0, 1, dataset_A, distance_matrix_A);
+
+
+    //for(int i = 0; i < distance_matrix_A.size(); i++){
+    //    for(int j = 0; j < distance_matrix_A[i].size(); j++){
+    //        std::cout << distance_matrix_A[i][j] << "\n";
     //    }
     //}
-
-    // Create distance matrix
 
     // Create extra cost list
 
