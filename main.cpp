@@ -85,6 +85,39 @@ std::vector <int> random_solution(std::vector <std::vector <int>> & dataset, std
     return path;
 }
 
+std::vector <int> nearest_solution(int starting_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> path;
+    path.push_back(starting_node);
+    
+    int path_target_length = std::floor(dataset.size() / 2);
+
+    std::vector <int> available;
+
+    for(int i = 0; i < dataset.size(); i++){
+        if(i != starting_node){
+            available.push_back(i);
+        }
+    }
+
+    for(int i = 0; i < path_target_length; i++){
+        int shortest_distance = 1000000;
+        int chosen_node_index = -1;
+
+        for(int j = 0; j < available.size(); j++){
+            int cost = get_cost(path.back(), available[j], dataset, distance_matrix);
+            if(cost < shortest_distance){
+                shortest_distance = cost;
+                chosen_node_index = j;
+            }
+        }
+
+        path.push_back(available[chosen_node_index]);
+        available.erase(available.begin() + chosen_node_index);
+    }
+
+    return path;
+}
+
 
 int main(){
 
@@ -96,7 +129,12 @@ int main(){
 
     std::vector <int> solution_random = random_solution(dataset_A, distance_matrix_A);
 
-    std::cout << get_path_cost(solution_random, dataset_A, distance_matrix_A);
+    std::cout << get_path_cost(solution_random, dataset_A, distance_matrix_A) << "\n";
+
+    
+    std::vector <int> solution_nearest = nearest_solution(0, dataset_A, distance_matrix_A);
+
+    std::cout << get_path_cost(solution_nearest, dataset_A, distance_matrix_A) << "\n";
 
     //std::cout << get_cost(0, 1, dataset_A, distance_matrix_A);
 
