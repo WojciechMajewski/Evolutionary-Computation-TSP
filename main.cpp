@@ -87,19 +87,18 @@ std::vector <int> random_solution(std::vector <std::vector <int>> & dataset, std
 
 std::vector <int> nearest_solution(int starting_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
     std::vector <int> path;
-    path.push_back(starting_node);
-    
+    std::vector <int> available;
     int path_target_length = std::floor(dataset.size() / 2);
 
-    std::vector <int> available;
-
+    path.push_back(starting_node);
+    
     for(int i = 0; i < dataset.size(); i++){
         if(i != starting_node){
             available.push_back(i);
         }
     }
 
-    for(int i = 0; i < path_target_length; i++){
+    for(int i = path.size(); i < path_target_length; i++){
         int shortest_distance = 1000000;
         int chosen_node_index = -1;
 
@@ -112,6 +111,62 @@ std::vector <int> nearest_solution(int starting_node, std::vector <std::vector <
         }
 
         path.push_back(available[chosen_node_index]);
+        available.erase(available.begin() + chosen_node_index);
+    }
+
+    return path;
+}
+
+
+std::vector <int> greedy_cycle_solution(int starting_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> path;
+    std::vector <int> available;
+    int path_target_length = std::floor(dataset.size() / 2);
+
+    path.push_back(starting_node);
+
+    for(int i = 0; i < dataset.size(); i++){
+        if(i != starting_node){
+            available.push_back(i);
+        }
+    }
+
+    // Get second node by nearest neighbour
+    int shortest_distance = 1000000;
+    int chosen_node_index = -1;
+    for(int j = 0; j < available.size(); j++){
+        int cost = get_cost(path.back(), available[j], dataset, distance_matrix);
+        // + get_cost(available[j], path.back(), dataset, distance_matrix)
+        // This imitates the behavior of greedy cycle with only 1 chosen node
+        if(cost < shortest_distance){
+            shortest_distance = cost;
+            chosen_node_index = j;
+        }
+    }
+    path.push_back(available[chosen_node_index]);
+    available.erase(available.begin() + chosen_node_index);
+
+    // Get all subsequent nodes by greedy cycle
+    for(int i = path.size(); i < path_target_length; i++){
+        int shortest_extra_distance = 1000000;
+        int chosen_node_index = -1;
+        int chosen_path_index = -1;
+
+        for(int j = 0; j < available.size(); j++){
+
+            for(int k = 0; k < path.size(); k++){
+                int extra_distance = get_cost(path[k], available[j], dataset, distance_matrix) + \
+                                    get_cost(available[j], path[(k+1) % path.size()], dataset, distance_matrix) - \
+                                    get_cost(path[k], path[(k+1) % path.size()], dataset, distance_matrix);
+                if(extra_distance < shortest_extra_distance){
+                    shortest_extra_distance = extra_distance;
+                    chosen_node_index = j;
+                    chosen_path_index = k+1;
+                }
+            }
+        }
+
+        path.insert(path.begin() + chosen_path_index, available[chosen_node_index]);
         available.erase(available.begin() + chosen_node_index);
     }
 
@@ -135,6 +190,10 @@ int main(){
     std::vector <int> solution_nearest = nearest_solution(0, dataset_A, distance_matrix_A);
 
     std::cout << get_path_cost(solution_nearest, dataset_A, distance_matrix_A) << "\n";
+
+    std::vector <int> solution_greedy_cycle = greedy_cycle_solution(0, dataset_A, distance_matrix_A);
+
+    std::cout << get_path_cost(solution_greedy_cycle, dataset_A, distance_matrix_A) << "\n";
 
     //std::cout << get_cost(0, 1, dataset_A, distance_matrix_A);
 
