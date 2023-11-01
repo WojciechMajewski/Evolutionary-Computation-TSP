@@ -1,0 +1,24 @@
+
+Dataset A
+Nearest 84471
+Greedy Cycle 75666
+Greedy 2-Regret 104829
+Greedy Weighted 74563
+
+Dataset B
+Nearest 77448
+Greedy Cycle 68743
+Greedy 2-Regret 109774
+Greedy Weighted 70153
+
+Dataset C
+Nearest 56304
+Greedy Cycle 53226
+Greedy 2-Regret 65095
+Greedy Weighted 54126
+
+Dataset D
+Nearest 50335
+Greedy Cycle 50409
+Greedy 2-Regret 64682
+Greedy Weighted 49165

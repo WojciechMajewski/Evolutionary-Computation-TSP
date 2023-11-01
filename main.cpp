@@ -317,37 +317,106 @@ std::vector <int> greedy_weighted_solution(int starting_node, std::vector <std::
 }
 
 
+std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    int iterations = 200;
+
+    std::vector <std::vector <int>> best_paths;
+    std::vector <int> best_scores;
+    
+    std::vector <std::string> algorithm_names;
+    algorithm_names.push_back("Nearest");
+    algorithm_names.push_back("Greedy Cycle");
+    algorithm_names.push_back("Greedy 2-Regret");
+    algorithm_names.push_back("Greedy Weighted");
+
+    best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
+    best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
+    best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
+    best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
+
+    for(int i = 0; i < best_paths.size(); i++){
+        best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
+    }
+
+    for(int i = 1; i < iterations; i++){
+        //if(i%20 == 0) std::cout << "iteration " << i << "\n";
+        for(int j = 0; j < algorithm_names.size(); j++){
+            std::vector <int> solution;
+            int cost;
+
+            if(j == 0){
+                solution = nearest_solution(i, dataset, distance_matrix);
+            }
+            if(j == 1){
+                solution = greedy_cycle_solution(i, dataset, distance_matrix);
+            }
+            if(j == 2){
+                solution = greedy_2_regret_solution(i, dataset, distance_matrix);
+            }
+            if(j == 3){
+                solution = greedy_weighted_solution(i, dataset, distance_matrix);
+            }
+
+            cost = get_path_cost(solution, dataset, distance_matrix);
+            if(cost < best_scores[j]){
+                best_scores[j] = cost;
+                best_paths[j] = solution;
+            }
+        }
+    }
+    return best_paths;
+}
+
+
 int main(){
     std::srand(148253);
 
-    std::vector <std::vector <int>> dataset_A = read_dataset("Data/TSPA.csv");
-    std::vector <std::vector <int>> distance_matrix_A = create_distance_matrix(dataset_A);
+    bool file_write = true;
 
-    std::vector <int> solution_random = random_solution(dataset_A, distance_matrix_A);
-    std::cout << get_path_cost(solution_random, dataset_A, distance_matrix_A) << "\n";
+    if(file_write){
+        std::ofstream ofs;
+        ofs.open("cpp_results.txt", std::ofstream::out | std::ofstream::trunc);
+        ofs.close();
+    }
 
-    std::vector <int> solution_nearest = nearest_solution(0, dataset_A, distance_matrix_A);
-    std::cout << get_path_cost(solution_nearest, dataset_A, distance_matrix_A) << "\n";
-
-    std::vector <int> solution_greedy_cycle = greedy_cycle_solution(0, dataset_A, distance_matrix_A);
-    std::cout << get_path_cost(solution_greedy_cycle, dataset_A, distance_matrix_A) << "\n";
-
-    std::vector <int> solution_greedy_2_regret = greedy_2_regret_solution(0, dataset_A, distance_matrix_A);
-    std::cout << get_path_cost(solution_greedy_2_regret, dataset_A, distance_matrix_A) << "\n";
-
-    std::vector <int> solution_greedy_weighted = greedy_weighted_solution(0, dataset_A, distance_matrix_A);
-    std::cout << get_path_cost(solution_greedy_weighted, dataset_A, distance_matrix_A) << "\n";
-    //for(int i = 0; i < distance_matrix_A.size(); i++){
-    //    for(int j = 0; j < distance_matrix_A[i].size(); j++){
-    //        std::cout << distance_matrix_A[i][j] << "\n";
-    //    }
-    //}
-
-    // Create extra cost list
-
-    // Greedy heuristic algorithms
+    std::vector <std::string> dataset_paths;
+    dataset_paths.push_back("Data/TSPA.csv");
+    dataset_paths.push_back("Data/TSPB.csv");
+    dataset_paths.push_back("Data/TSPC.csv");
+    dataset_paths.push_back("Data/TSPD.csv");
+    
+    std::vector <std::string> algorithm_names;
+    algorithm_names.push_back("Nearest");
+    algorithm_names.push_back("Greedy Cycle");
+    algorithm_names.push_back("Greedy 2-Regret");
+    algorithm_names.push_back("Greedy Weighted");
 
 
+    for(int i = 0; i < dataset_paths.size(); i++){
+        std::vector <std::vector <int>> dataset = read_dataset(dataset_paths[i]);
+        std::vector <std::vector <int>> distance_matrix = create_distance_matrix(dataset);
+        std::vector <std::vector <int>> best_paths = calculate_best_paths(dataset, distance_matrix);
+
+        if(file_write){
+            std::ofstream ofs;
+            ofs.open("cpp_results.txt", std::ios_base::app);
+
+            ofs << "\nDataset " << char(65 + i) << "\n";
+            for(int j = 0; j < algorithm_names.size(); j++){
+                ofs << algorithm_names[j] << " ";
+                ofs << get_path_cost(best_paths[j], dataset, distance_matrix) << "\n";
+            }
+
+            ofs.close();
+        }
+        else {
+            std::cout << "Dataset " << char(65 + i);
+            for(int j = 0; j < algorithm_names.size(); j++){
+                std::cout << algorithm_names[j] << " ";
+                std::cout << get_path_cost(best_paths[j], dataset, distance_matrix) << "\n";
+            }
+        }
+    }
     return 0;
 }
 
