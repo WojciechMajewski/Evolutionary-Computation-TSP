@@ -244,6 +244,79 @@ std::vector <int> greedy_2_regret_solution(int starting_node, std::vector <std::
 }
 
 
+std::vector <int> greedy_weighted_solution(int starting_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> path;
+    std::vector <int> available;
+    int path_target_length = std::floor(dataset.size() / 2);
+
+    path.push_back(starting_node);
+
+    for(int i = 0; i < dataset.size(); i++){
+        if(i != starting_node){
+            available.push_back(i);
+        }
+    }
+
+    int shortest_distance = 1000000;
+    int chosen_node_index = -1;
+    for(int j = 0; j < available.size(); j++){
+        int cost = get_cost(path.back(), available[j], dataset, distance_matrix);
+        if(cost < shortest_distance){
+            shortest_distance = cost;
+            chosen_node_index = j;
+        }
+    }
+    path.push_back(available[chosen_node_index]);
+    available.erase(available.begin() + chosen_node_index);
+
+    for(int i = path.size(); i < path_target_length; i++){
+        int highest_regret = -1000000;
+        int chosen_node_index = -1;
+        int chosen_path_index = -1;
+
+        for(int j = 0; j < available.size(); j++){
+
+            int best_location_for_this_node = -1;
+            std::vector <int> top_2_scores;
+            top_2_scores.push_back(1000000);
+            top_2_scores.push_back(1000000);
+
+            for(int k = 0; k < path.size(); k++){
+                int extra_distance = get_cost(path[k], available[j], dataset, distance_matrix) + \
+                                    get_cost(available[j], path[(k+1) % path.size()], dataset, distance_matrix) - \
+                                    get_cost(path[k], path[(k+1) % path.size()], dataset, distance_matrix);
+
+                for(int m = 0; m < 2; m++){
+                    if(extra_distance < top_2_scores[m]){
+                        top_2_scores.insert(top_2_scores.begin() + m, extra_distance);
+                        top_2_scores.pop_back();
+                        if(m == 0){
+                            best_location_for_this_node = k+1;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            int regret_2 = top_2_scores[1] - top_2_scores[0];
+            // The only change from 2-regret:
+            regret_2 -= top_2_scores[0];
+
+            if(regret_2 > highest_regret){
+                highest_regret = regret_2;
+                chosen_node_index = j;
+                chosen_path_index = best_location_for_this_node;
+            }
+        }
+
+        path.insert(path.begin() + chosen_path_index, available[chosen_node_index]);
+        available.erase(available.begin() + chosen_node_index);
+    }
+
+    return path;
+}
+
+
 int main(){
     std::srand(148253);
 
@@ -262,6 +335,8 @@ int main(){
     std::vector <int> solution_greedy_2_regret = greedy_2_regret_solution(0, dataset_A, distance_matrix_A);
     std::cout << get_path_cost(solution_greedy_2_regret, dataset_A, distance_matrix_A) << "\n";
 
+    std::vector <int> solution_greedy_weighted = greedy_weighted_solution(0, dataset_A, distance_matrix_A);
+    std::cout << get_path_cost(solution_greedy_weighted, dataset_A, distance_matrix_A) << "\n";
     //for(int i = 0; i < distance_matrix_A.size(); i++){
     //    for(int j = 0; j < distance_matrix_A[i].size(); j++){
     //        std::cout << distance_matrix_A[i][j] << "\n";
