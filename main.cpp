@@ -397,7 +397,7 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
             for(int k = 0; k < best_paths[j].size() - 1; k++){
                 ofs << best_paths[j][k] << ", ";
             }
-            ofs << best_paths[j][best_paths.size() - 1] << "\n";
+            ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
             ofs << "Worst score:\n" << worst_scores[j] << "\n";
             ofs << "Average score:\n" << average_scores[j] << "\n";
             ofs << "Time:\n" << times[j] << "ms\n";
