@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdlib>
 #include <algorithm>
+#include <chrono>
 
 std::vector <std::vector <int>> read_dataset(std::string path) {
     std::ifstream file(path);
@@ -317,11 +318,13 @@ std::vector <int> greedy_weighted_solution(int starting_node, std::vector <std::
 }
 
 
-std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
     int iterations = 200;
-
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
+    std::vector <int> worst_scores;
+    std::vector <float> average_scores;
+    std::vector <int> times;
     
     std::vector <std::string> algorithm_names;
     algorithm_names.push_back("Nearest");
@@ -336,11 +339,15 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
+        worst_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
+        average_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
     }
 
-    for(int i = 1; i < iterations; i++){
+    for(int j = 0; j < algorithm_names.size(); j++){
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+        for(int i = 1; i < iterations; i++){
         //if(i%20 == 0) std::cout << "iteration " << i << "\n";
-        for(int j = 0; j < algorithm_names.size(); j++){
             std::vector <int> solution;
             int cost;
 
@@ -358,11 +365,44 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
             }
 
             cost = get_path_cost(solution, dataset, distance_matrix);
+            average_scores[j] += cost;
             if(cost < best_scores[j]){
                 best_scores[j] = cost;
                 best_paths[j] = solution;
             }
+            if(cost > worst_scores[j]){
+                worst_scores[j] = cost;
+            }
         }
+        average_scores[j] /= iterations;
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+
+        if(filename == ""){
+            std::cout << "Best score:\n" << best_scores[j] << "\n";
+            std::cout << "Worst score:\n" << worst_scores[j] << "\n";
+            std::cout << "Average score:\n" << average_scores[j] << "\n";
+            std::cout << "Time difference:\n" << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+        }
+    }
+
+    
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+        ofs << "\nDATASET " << dataset_name << "\n";
+        for(int j = 0; j < algorithm_names.size(); j++){
+            ofs << "\n" << algorithm_names[j] << "\n";
+            ofs << "Best score:\n" << best_scores[j] << "\n";
+            for(int k = 0; k < best_paths[j].size() - 1; k++){
+                ofs << best_paths[j][k] << ", ";
+            }
+            ofs << best_paths[j][best_paths.size() - 1] << "\n";
+            ofs << "Worst score:\n" << worst_scores[j] << "\n";
+            ofs << "Average score:\n" << average_scores[j] << "\n";
+            ofs << "Time:\n" << times[j] << "ms\n";
+        }
+        ofs.close();
     }
     return best_paths;
 }
@@ -371,11 +411,12 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
 int main(){
     std::srand(148253);
 
-    bool file_write = true;
+    std::string filename = "cpp_results.txt";
 
-    if(file_write){
+
+    if(filename != ""){
         std::ofstream ofs;
-        ofs.open("cpp_results.txt", std::ofstream::out | std::ofstream::trunc);
+        ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
         ofs.close();
     }
 
@@ -395,27 +436,11 @@ int main(){
     for(int i = 0; i < dataset_paths.size(); i++){
         std::vector <std::vector <int>> dataset = read_dataset(dataset_paths[i]);
         std::vector <std::vector <int>> distance_matrix = create_distance_matrix(dataset);
-        std::vector <std::vector <int>> best_paths = calculate_best_paths(dataset, distance_matrix);
+        std::string dataset_name;
+        dataset_name += (char(65 + i));
+        std::vector <std::vector <int>> best_paths = calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
 
-        if(file_write){
-            std::ofstream ofs;
-            ofs.open("cpp_results.txt", std::ios_base::app);
-
-            ofs << "\nDataset " << char(65 + i) << "\n";
-            for(int j = 0; j < algorithm_names.size(); j++){
-                ofs << algorithm_names[j] << " ";
-                ofs << get_path_cost(best_paths[j], dataset, distance_matrix) << "\n";
-            }
-
-            ofs.close();
-        }
-        else {
-            std::cout << "Dataset " << char(65 + i);
-            for(int j = 0; j < algorithm_names.size(); j++){
-                std::cout << algorithm_names[j] << " ";
-                std::cout << get_path_cost(best_paths[j], dataset, distance_matrix) << "\n";
-            }
-        }
+        
     }
     return 0;
 }
