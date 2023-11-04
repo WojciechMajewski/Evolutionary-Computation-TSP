@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <chrono>
+#include <algorithm>
 
 std::vector <std::vector <int>> read_dataset(std::string path) {
     std::ifstream file(path);
@@ -131,7 +132,7 @@ std::vector <int> greedy_cycle_solution(int starting_node, std::vector <std::vec
         }
     }
 
-    // Get second node by nearest neighbour
+    // Get second node by nearest neighbor
     int shortest_distance = 1000000;
     int chosen_node_index = -1;
     for(int j = 0; j < available.size(); j++){
@@ -317,6 +318,303 @@ std::vector <int> greedy_weighted_solution(int starting_node, std::vector <std::
     return path;
 }
 
+std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, int starting_node, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    // if not steepest_neighborhood, then greedy
+    // if not edges_exchange, then nodes exchange // But intra- and inter- should both be used
+    // if starting_node == -1 then random starting solution
+
+    std::vector <int> solution;
+    if(starting_node != -1){
+        solution = greedy_weighted_solution(starting_node, dataset, distance_matrix);
+    }
+    else{
+        solution = random_solution(dataset, distance_matrix);
+    }
+
+    // sort the starting solution, then for each of 200 check if in sorted, if yes advance sorted, if no add to available
+    std::vector <int> available_nodes;
+    std::vector <int> unavailable_nodes = solution;
+    std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+    int index = 0;
+    for(int i = 0; i < dataset.size(); i++){
+        if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+            index++;
+        }
+        else{
+            available_nodes.push_back(i);
+        }
+    }
+
+    // 1000 iterations instead of while(true)
+    for(int t = 0; t < 1000; t++){
+        int best_improvement = 0;
+        int new_node_index = -1;
+        int replacing_node_index = -1;
+
+        int first_edge_start_index = -1; // By definition the end node will be (i+1 mod size)
+        int second_edge_start_index = -1;
+
+        int first_to_switch_index = -1;
+        int second_to_switch_index = -1;
+
+        if(steepest_neighborhood){
+            // First new nodes
+            for(int i = 0; i < solution.size(); i++){
+                int old_cost = get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix) + get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                for(int j = 0; j < available_nodes.size(); j++){
+                    int cost_improvement = old_cost - get_cost(solution[(i-1) % solution.size()], available_nodes[j], dataset, distance_matrix) + get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    if(cost_improvement > best_improvement){
+                        best_improvement = cost_improvement;
+                        replacing_node_index = i;
+                        new_node_index = j;
+                    }
+                }
+            }
+
+            // Then edge/node reordering
+            if(edges_exchange){
+                // Two pairs of consecutive nodes
+                for(int i = 0; i < solution.size(); i++){
+                    for(int j = 0; (j+1) % solution.size() < i; j++){
+                        if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+
+                        cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > best_improvement){
+                            best_improvement = cost_improvement;
+
+                            first_edge_start_index = j;
+                            second_edge_start_index = i; // As j is always smaller than i
+
+                            new_node_index = -1;
+                        }
+                    }
+                }
+
+            }
+            else{ // nodes exchange
+                for(int i = 0; i < solution.size(); i++){
+                    for(int j = 0; j < i; j++){
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+                        if(i == solution.size() - 1 && j == 0){ // Then i is just before j as the path is a cycle
+                            old_cost += get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i], solution[j], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+
+                            cost_improvement -= get_cost(solution[(i-1) % solution.size()], solution[j], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        }
+                        else if(j == i-1){
+                            old_cost += get_cost(solution[(j-1) % solution.size()], solution[j], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j], solution[i], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+
+                            cost_improvement -= get_cost(solution[(j-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i], solution[j], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        }
+                        else{
+                            old_cost += get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(j-1) % solution.size()], solution[j], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+
+                            cost_improvement -= get_cost(solution[(i-1) % solution.size()], solution[j], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        }
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > best_improvement){
+                            best_improvement = cost_improvement;
+                            first_to_switch_index = i;
+                            second_to_switch_index = j;
+                            new_node_index = -1;
+                        }
+
+                    }
+
+                }
+            }
+
+            if(best_improvement > 0){
+                if(new_node_index != -1){ // Then new node is best
+                    solution[replacing_node_index] = available_nodes[new_node_index];
+                }
+                else{
+                    if(edges_exchange){ // Then edge exchange worked
+                        // Edge exchange through flipping a subpath
+                        std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
+                    }
+                    else{ // Then node exchange worked
+                        int temp = solution[first_to_switch_index];
+                        solution[first_to_switch_index] = solution[second_to_switch_index];
+                        solution[second_to_switch_index] = temp;
+                    }
+                }
+            }
+            else{ // No improvement, break the local search loop, local optimum found!
+                return solution;
+            }
+        }
+        else{
+            int random_offset = rand() % solution.size();
+            //int io = (i + random_offset) % solution.size(); // that's for greedy
+
+            int i_old_node_iterating = 0;
+            int i_old_node = (i_old_node_iterating + random_offset) % solution.size();
+            int j_new_node = 0;
+            int old_cost_new_node = 0;
+            bool new_node_finished = false;
+
+            int i_intra_iter = 0; // This calculates when the loop should end
+            int i_intra = (i_intra_iter + random_offset) % solution.size(); // This is used as an index in calculations, and is always offset from i_intra_iter by set random amount
+            int j_intra = 0;
+            bool intra_finished = false;
+
+            // Similar to steepest, but it needs to randomize whether it tries to add a new node or do an internal swap
+            while(true){
+                int choice = rand() % 2;
+
+                // New node advance
+                if(choice == 0 && !new_node_finished){ 
+                    j_new_node++;
+                    if(j_new_node >= available_nodes.size()){
+                        j_new_node = 0;
+                        i_old_node_iterating++;
+                        if(i_old_node_iterating >= solution.size()){
+                            new_node_finished = true;
+                            continue; // No node replacement will improve the score
+                        }
+
+                        i_old_node = (i_old_node_iterating + random_offset) % solution.size();
+
+                        old_cost_new_node = 0;
+                        old_cost_new_node += get_cost(solution[(i_old_node-1) % solution.size()], solution[i_old_node], dataset, distance_matrix);
+                        old_cost_new_node += get_cost(solution[i_old_node], solution[(i_old_node+1) % solution.size()], dataset, distance_matrix);
+                    }
+                    int cost_improvement = old_cost_new_node;
+                    cost_improvement -= get_cost(solution[(i_old_node-1) % solution.size()], available_nodes[j_new_node], dataset, distance_matrix); 
+                    cost_improvement -= get_cost(available_nodes[j_new_node], solution[(i_old_node+1) % solution.size()], dataset, distance_matrix);
+                    if(cost_improvement > 0){
+                        solution[replacing_node_index] = available_nodes[new_node_index];
+                        break; // Found improvement, end iteration, go find the next
+                    }
+                }
+                else if (choice != 0 && !intra_finished){
+                    // Edge rearrangement advance
+                    if(edges_exchange){
+                        j_intra++;
+                        if((j_intra+1) % solution.size() >= i_intra){
+                            j_intra = 0;
+                            i_intra_iter++;
+                            if(i_intra_iter >= solution.size()){
+                                intra_finished = true;
+                                continue; // No edge rearrangement will improve the score
+                            }
+
+                            i_intra = (i_intra_iter + random_offset) % solution.size();
+
+                        }
+
+                        if(j_intra == i_intra || j_intra == (i_intra+1) % solution.size() || (j_intra+1) % solution.size() == i_intra) continue;
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+
+                        cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+
+                        cost_improvement += old_cost;
+                        if(cost_improvement > 0){
+                            std::reverse(solution.begin() + ((j_intra + 1) % solution.size()), solution.begin() + ((i_intra + 1) % solution.size()));
+                            break;
+                        }
+                        
+                    }
+
+                    // Node rearrangement advance
+                    else{
+                        j_intra++;
+                        if(j_intra >= i_intra){
+                            j_intra = 0;
+                            i_intra_iter++;
+                            if(i_intra_iter >= solution.size()){
+                                intra_finished = true;
+                                continue; // No edge rearrangement will improve the score
+                            }
+
+                            i_intra = (i_intra_iter + random_offset) % solution.size();
+                        }
+
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+                        if(i_intra == solution.size() - 1 && j_intra == 0){ // Then i is just before j as the path is a cycle
+                            old_cost += get_cost(solution[(i_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i_intra], solution[j_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(i_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j_intra], solution[i_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+                        }
+                        else if(j_intra == i_intra-1){
+                            old_cost += get_cost(solution[(j_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j_intra], solution[i_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i_intra], solution[j_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                        }
+                        else{
+                            old_cost += get_cost(solution[(i_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(j_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(i_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
+                        }
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > best_improvement){
+                            int temp = solution[i_intra];
+                            solution[i_intra] = solution[j_intra];
+                            solution[j_intra] = temp;
+                            break;
+                        }
+                    }
+                }
+                else{
+                    return solution;
+                    // No improvement can be found by greedy, so end
+                }
+            }
+        }
+        
+        // If nothing orders us to continue then break
+        return solution;
+    }
+
+
+    return solution;
+}
 
 std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
     int iterations = 200;
@@ -436,6 +734,10 @@ int main(){
     for(int i = 0; i < dataset_paths.size(); i++){
         std::vector <std::vector <int>> dataset = read_dataset(dataset_paths[i]);
         std::vector <std::vector <int>> distance_matrix = create_distance_matrix(dataset);
+
+        local_search(true, true, true, dataset, distance_matrix);
+        return 0;
+
         std::string dataset_name;
         dataset_name += (char(65 + i));
         std::vector <std::vector <int>> best_paths = calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
