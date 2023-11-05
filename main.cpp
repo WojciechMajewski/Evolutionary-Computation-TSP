@@ -326,6 +326,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
     std::vector <int> solution;
     if(starting_node != -1){
         solution = greedy_weighted_solution(starting_node, dataset, distance_matrix);
+        //std::cout << get_path_cost(solution, dataset, distance_matrix) << "\n";
     }
     else{
         solution = random_solution(dataset, distance_matrix);
@@ -361,9 +362,14 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
         if(steepest_neighborhood){
             // First new nodes
             for(int i = 0; i < solution.size(); i++){
-                int old_cost = get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix) + get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                int old_cost = 0;
+                old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
                 for(int j = 0; j < available_nodes.size(); j++){
-                    int cost_improvement = old_cost - get_cost(solution[(i-1) % solution.size()], available_nodes[j], dataset, distance_matrix) + get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    int cost_improvement = 0;
+                    cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                    cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement += old_cost;
                     if(cost_improvement > best_improvement){
                         best_improvement = cost_improvement;
                         replacing_node_index = i;
@@ -407,33 +413,39 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         int old_cost = 0;
                         int cost_improvement = 0;
                         if(i == solution.size() - 1 && j == 0){ // Then i is just before j as the path is a cycle
-                            old_cost += get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            //continue;
+                            // TODO: FIX
+                            old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
                             old_cost += get_cost(solution[i], solution[j], dataset, distance_matrix);
                             old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
 
-                            cost_improvement -= get_cost(solution[(i-1) % solution.size()], solution[j], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[j], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
                         }
-                        else if(j == i-1){
-                            old_cost += get_cost(solution[(j-1) % solution.size()], solution[j], dataset, distance_matrix);
+                        else{
+                            if(j == i-1){
+                            //continue;
+                            old_cost += get_cost(solution[(j-1 + solution.size()) % solution.size()], solution[j], dataset, distance_matrix);
                             old_cost += get_cost(solution[j], solution[i], dataset, distance_matrix);
                             old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
 
-                            cost_improvement -= get_cost(solution[(j-1) % solution.size()], solution[i], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[i], solution[j], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
-                        }
-                        else{
-                            old_cost += get_cost(solution[(i-1) % solution.size()], solution[i], dataset, distance_matrix);
-                            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
-                            old_cost += get_cost(solution[(j-1) % solution.size()], solution[j], dataset, distance_matrix);
-                            old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);  
+                            }
+                            else{
+                                //continue;
+                                old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                                old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                                old_cost += get_cost(solution[(j-1 + solution.size()) % solution.size()], solution[j], dataset, distance_matrix);
+                                old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
 
-                            cost_improvement -= get_cost(solution[(i-1) % solution.size()], solution[j], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[(j-1) % solution.size()], solution[i], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                                cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[j], dataset, distance_matrix);
+                                cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                                cost_improvement -= get_cost(solution[(j-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                                cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                            }
                         }
 
                         cost_improvement += old_cost;
@@ -451,8 +463,13 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
             }
 
             if(best_improvement > 0){
+                //std::cout << "improvement by: " << best_improvement;
+                //std::cout << "\nold: " << get_path_cost(solution, dataset, distance_matrix);
                 if(new_node_index != -1){ // Then new node is best
+                
+                    int temp = solution[replacing_node_index];
                     solution[replacing_node_index] = available_nodes[new_node_index];
+                    available_nodes[new_node_index] = temp;
                 }
                 else{
                     if(edges_exchange){ // Then edge exchange worked
@@ -460,18 +477,21 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
                     }
                     else{ // Then node exchange worked
+                    
+                        //std::cout << ", by replacing nodes";
                         int temp = solution[first_to_switch_index];
                         solution[first_to_switch_index] = solution[second_to_switch_index];
                         solution[second_to_switch_index] = temp;
                     }
                 }
+                //std::cout << "\nnew: " << get_path_cost(solution, dataset, distance_matrix) << "\n";
             }
             else{ // No improvement, break the local search loop, local optimum found!
                 return solution;
             }
         }
         else{
-            int random_offset = rand() % solution.size();
+            int random_offset = 0; //rand() % solution.size(); TODO FIX
             //int io = (i + random_offset) % solution.size(); // that's for greedy
 
             int i_old_node_iterating = 0;
@@ -487,7 +507,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 
             // Similar to steepest, but it needs to randomize whether it tries to add a new node or do an internal swap
             while(true){
-                int choice = rand() % 2;
+                int choice = 0; //rand() % 2; // TODO FIX
 
                 // New node advance
                 if(choice == 0 && !new_node_finished){ 
@@ -503,20 +523,23 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         i_old_node = (i_old_node_iterating + random_offset) % solution.size();
 
                         old_cost_new_node = 0;
-                        old_cost_new_node += get_cost(solution[(i_old_node-1) % solution.size()], solution[i_old_node], dataset, distance_matrix);
+                        old_cost_new_node += get_cost(solution[(i_old_node-1 + solution.size()) % solution.size()], solution[i_old_node], dataset, distance_matrix);
                         old_cost_new_node += get_cost(solution[i_old_node], solution[(i_old_node+1) % solution.size()], dataset, distance_matrix);
                     }
                     int cost_improvement = old_cost_new_node;
-                    cost_improvement -= get_cost(solution[(i_old_node-1) % solution.size()], available_nodes[j_new_node], dataset, distance_matrix); 
+                    cost_improvement -= get_cost(solution[(i_old_node-1 + solution.size()) % solution.size()], available_nodes[j_new_node], dataset, distance_matrix); 
                     cost_improvement -= get_cost(available_nodes[j_new_node], solution[(i_old_node+1) % solution.size()], dataset, distance_matrix);
                     if(cost_improvement > 0){
-                        solution[replacing_node_index] = available_nodes[new_node_index];
+                        int temp = solution[i_old_node];
+                        solution[i_old_node] = available_nodes[j_new_node];
+                        available_nodes[j_new_node] = temp;
                         break; // Found improvement, end iteration, go find the next
                     }
                 }
                 else if (choice != 0 && !intra_finished){
                     // Edge rearrangement advance
                     if(edges_exchange){
+                        
                         j_intra++;
                         if((j_intra+1) % solution.size() >= i_intra){
                             j_intra = 0;
@@ -550,6 +573,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 
                     // Node rearrangement advance
                     else{
+                        //std::cout << i_intra_iter << " " << j_intra << " " << i_intra << "\n";
                         j_intra++;
                         if(j_intra >= i_intra){
                             j_intra = 0;
@@ -565,29 +589,29 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         int old_cost = 0;
                         int cost_improvement = 0;
                         if(i_intra == solution.size() - 1 && j_intra == 0){ // Then i is just before j as the path is a cycle
-                            old_cost += get_cost(solution[(i_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(i_intra-1 + solution.size()) % solution.size()], solution[i_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[i_intra], solution[j_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[(i_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(i_intra-1 + solution.size()) % solution.size()], solution[j_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[j_intra], solution[i_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
                         }
                         else if(j_intra == i_intra-1){
-                            old_cost += get_cost(solution[(j_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(j_intra-1 + solution.size()) % solution.size()], solution[j_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[j_intra], solution[i_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[(j_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j_intra-1 + solution.size()) % solution.size()], solution[i_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[i_intra], solution[j_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
                         }
                         else{
-                            old_cost += get_cost(solution[(i_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(i_intra-1 + solution.size()) % solution.size()], solution[i_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
-                            old_cost += get_cost(solution[(j_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            old_cost += get_cost(solution[(j_intra-1 + solution.size()) % solution.size()], solution[j_intra], dataset, distance_matrix);
                             old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[(i_intra-1) % solution.size()], solution[j_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(i_intra-1 + solution.size()) % solution.size()], solution[j_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
-                            cost_improvement -= get_cost(solution[(j_intra-1) % solution.size()], solution[i_intra], dataset, distance_matrix);
+                            cost_improvement -= get_cost(solution[(j_intra-1 + solution.size()) % solution.size()], solution[i_intra], dataset, distance_matrix);
                             cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
                         }
 
@@ -597,27 +621,27 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                             int temp = solution[i_intra];
                             solution[i_intra] = solution[j_intra];
                             solution[j_intra] = temp;
+                            std::cout << "Found improvement" << "\n";
                             break;
                         }
                     }
                 }
                 else{
+                    
+            
+                    //std::cout << "hereere" << "\n";
                     return solution;
                     // No improvement can be found by greedy, so end
                 }
             }
         }
-        
-        // If nothing orders us to continue then break
-        return solution;
     }
-
 
     return solution;
 }
 
-std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 200;
+void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
+    int iterations = 5;//200;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -625,15 +649,23 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
     std::vector <int> times;
     
     std::vector <std::string> algorithm_names;
-    algorithm_names.push_back("Nearest");
-    algorithm_names.push_back("Greedy Cycle");
-    algorithm_names.push_back("Greedy 2-Regret");
+    //algorithm_names.push_back("Nearest");
+    //algorithm_names.push_back("Greedy Cycle");
+    //algorithm_names.push_back("Greedy Regret");
     algorithm_names.push_back("Greedy Weighted");
+    algorithm_names.push_back("Local Search00");
+    //algorithm_names.push_back("Local Search10");
+    //algorithm_names.push_back("Local Search01");
+    //algorithm_names.push_back("Local Search11");
 
-    best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
-    best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
-    best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
+    //best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
+    //best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
+    //best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
+    //best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
+    //best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
+    //best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
@@ -643,23 +675,42 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
 
     for(int j = 0; j < algorithm_names.size(); j++){
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
+        
         for(int i = 1; i < iterations; i++){
         //if(i%20 == 0) std::cout << "iteration " << i << "\n";
+            
             std::vector <int> solution;
             int cost;
 
-            if(j == 0){
+            if(algorithm_names[j] == "Nearest"){
                 solution = nearest_solution(i, dataset, distance_matrix);
             }
-            if(j == 1){
+            if(algorithm_names[j] == "Greedy Cycle"){
                 solution = greedy_cycle_solution(i, dataset, distance_matrix);
             }
-            if(j == 2){
+            if(algorithm_names[j] == "Greedy Regret"){
                 solution = greedy_2_regret_solution(i, dataset, distance_matrix);
             }
-            if(j == 3){
+            if(algorithm_names[j] == "Greedy Weighted"){
                 solution = greedy_weighted_solution(i, dataset, distance_matrix);
+            }
+            if(algorithm_names[j].substr(0, 12) == "Local Search"){
+                bool steepest;
+                bool edges;
+                if(int(algorithm_names[j][12]) - 48){
+                    steepest = true;
+                }
+                else{
+                    steepest = false;
+                }
+                if(int(algorithm_names[j][13]) - 48){
+                    edges = true;
+                }
+                else{
+                    edges = false;
+                }
+                
+                solution = local_search(steepest, edges, i, dataset, distance_matrix);
             }
 
             cost = get_path_cost(solution, dataset, distance_matrix);
@@ -672,6 +723,7 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
                 worst_scores[j] = cost;
             }
         }
+        
         average_scores[j] /= iterations;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
@@ -684,7 +736,6 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
         }
     }
 
-    
     if(filename != ""){
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
@@ -702,14 +753,13 @@ std::vector <std::vector <int>> calculate_best_paths(std::vector <std::vector <i
         }
         ofs.close();
     }
-    return best_paths;
 }
 
 
 int main(){
     std::srand(148253);
 
-    std::string filename = "cpp_results.txt";
+    std::string filename = "cpp_local_search_results.txt";
 
 
     if(filename != ""){
@@ -723,24 +773,15 @@ int main(){
     dataset_paths.push_back("Data/TSPB.csv");
     dataset_paths.push_back("Data/TSPC.csv");
     dataset_paths.push_back("Data/TSPD.csv");
-    
-    std::vector <std::string> algorithm_names;
-    algorithm_names.push_back("Nearest");
-    algorithm_names.push_back("Greedy Cycle");
-    algorithm_names.push_back("Greedy 2-Regret");
-    algorithm_names.push_back("Greedy Weighted");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
         std::vector <std::vector <int>> dataset = read_dataset(dataset_paths[i]);
         std::vector <std::vector <int>> distance_matrix = create_distance_matrix(dataset);
 
-        local_search(true, true, true, dataset, distance_matrix);
-        return 0;
-
         std::string dataset_name;
         dataset_name += (char(65 + i));
-        std::vector <std::vector <int>> best_paths = calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
+        calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
 
         
     }
