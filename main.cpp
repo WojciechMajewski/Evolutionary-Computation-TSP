@@ -668,10 +668,11 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     std::vector <int> times;
     
     std::vector <std::string> algorithm_names;
-    //algorithm_names.push_back("Nearest");
-    //algorithm_names.push_back("Greedy Cycle");
-    //algorithm_names.push_back("Greedy Regret");
+    algorithm_names.push_back("Nearest");
+    algorithm_names.push_back("Greedy Cycle");
+    algorithm_names.push_back("Greedy Regret");
     algorithm_names.push_back("Greedy Weighted");
+    /*
     /// Then Greedy Weighted starting
     algorithm_names.push_back("Local Search101");
     algorithm_names.push_back("Local Search111");
@@ -682,12 +683,14 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     algorithm_names.push_back("Local Search110");
     algorithm_names.push_back("Local Search000");
     algorithm_names.push_back("Local Search010");
+    */
 
-    //best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
-    //best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
-    //best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
+    best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
+    best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
+    best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
 
+    /*
     best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
@@ -697,6 +700,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     best_paths.push_back(local_search(true, true, -1, dataset, distance_matrix));
     best_paths.push_back(local_search(false, false, -1, dataset, distance_matrix));
     best_paths.push_back(local_search(false, true, -1, dataset, distance_matrix));
+    */
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
@@ -796,7 +800,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "local_search_results_extra.txt";
+    std::string filename = "old_algorithms_results.txt";
 
 
     if(filename != ""){
