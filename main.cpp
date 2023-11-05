@@ -390,8 +390,17 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
                         old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
 
-                        cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
-                        cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+                        //old_cost += dataset[solution[j]][2];
+
+                        //cost_improvement -= get_cost(solution[i], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        //cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+
+                        cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+                        //cost_improvement -= dataset[solution[j]][2];
 
                         cost_improvement += old_cost;
 
@@ -541,7 +550,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                     if(edges_exchange){
                         
                         j_intra++;
-                        if((j_intra+1) % solution.size() >= i_intra){
+                        if(j_intra+1 >= i_intra){
                             j_intra = 0;
                             i_intra_iter++;
                             if(i_intra_iter >= solution.size()){
@@ -560,12 +569,23 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         old_cost += get_cost(solution[i_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
                         old_cost += get_cost(solution[j_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
 
-                        cost_improvement -= get_cost(solution[i_intra], solution[(j_intra+1) % solution.size()], dataset, distance_matrix);
-                        cost_improvement -= get_cost(solution[j_intra], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += dataset[solution[i_intra]][2];
+                        //old_cost += dataset[solution[j_intra]][2];
+
+                        cost_improvement -= get_cost(solution[(j_intra+1) % solution.size()], solution[(i_intra+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j_intra], solution[i_intra], dataset, distance_matrix);
+
+                        cost_improvement -= dataset[solution[(j_intra+1) % solution.size()]][2];
+                        //cost_improvement -= dataset[solution[j_intra]][2];
 
                         cost_improvement += old_cost;
+
+
                         if(cost_improvement > 0){
+                            //std::cout << "improvement " << cost_improvement << "\n";
+                            //std::cout << "pre " << get_path_cost(solution, dataset, distance_matrix) << "\n";
                             std::reverse(solution.begin() + ((j_intra + 1) % solution.size()), solution.begin() + ((i_intra + 1) % solution.size()));
+                            //std::cout << "post "<< get_path_cost(solution, dataset, distance_matrix) << "\n";
                             break;
                         }
                         
@@ -640,7 +660,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 }
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 200;
+    int iterations = 10; //200;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -652,19 +672,31 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     //algorithm_names.push_back("Greedy Cycle");
     //algorithm_names.push_back("Greedy Regret");
     algorithm_names.push_back("Greedy Weighted");
-    algorithm_names.push_back("Local Search00");
-    algorithm_names.push_back("Local Search10");
-    algorithm_names.push_back("Local Search01");
-    algorithm_names.push_back("Local Search11");
+    /// Then Greedy Weighted starting
+    algorithm_names.push_back("Local Search101");
+    algorithm_names.push_back("Local Search111");
+    algorithm_names.push_back("Local Search001");
+    algorithm_names.push_back("Local Search011");
+    /// Then Random starting
+    algorithm_names.push_back("Local Search100");
+    algorithm_names.push_back("Local Search110");
+    algorithm_names.push_back("Local Search000");
+    algorithm_names.push_back("Local Search010");
 
     //best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
     //best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
     //best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
-    best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
+
     best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
-    best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
+
+    best_paths.push_back(local_search(true, false, -1, dataset, distance_matrix));
+    best_paths.push_back(local_search(true, true, -1, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, false, -1, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, true, -1, dataset, distance_matrix));
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
@@ -708,8 +740,13 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
                 else{
                     edges = false;
                 }
+                if(int(algorithm_names[j][14]) - 48){
+                    solution = local_search(steepest, edges, i, dataset, distance_matrix);
+                }
+                else{
+                    solution = local_search(steepest, edges, -1, dataset, distance_matrix);
+                }
                 
-                solution = local_search(steepest, edges, i, dataset, distance_matrix);
             }
 
             cost = get_path_cost(solution, dataset, distance_matrix);
@@ -741,14 +778,15 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
         ofs << "\nDATASET " << dataset_name << "\n";
         for(int j = 0; j < algorithm_names.size(); j++){
             ofs << "\n" << algorithm_names[j] << "\n";
-            ofs << "Best score:\n" << best_scores[j] << "\n";
+            //ofs << "Best score:\n" << best_scores[j] << "\n";
+            ofs << "Best, Average, Worst scores:\n" << best_scores[j] << " " << average_scores[j] << " " << worst_scores[j] << "\n";
             for(int k = 0; k < best_paths[j].size() - 1; k++){
                 ofs << best_paths[j][k] << ", ";
             }
             ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
-            ofs << "Worst score:\n" << worst_scores[j] << "\n";
-            ofs << "Average score:\n" << average_scores[j] << "\n";
-            ofs << "Time:\n" << times[j] << "ms\n";
+            ofs << "Time: " << times[j] << "ms\n";
+            //ofs << "Worst score:\n" << worst_scores[j] << "\n";
+            //ofs << "Average score:\n" << average_scores[j] << "\n";
         }
         ofs.close();
     }
@@ -758,7 +796,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "cpp_local_search_results.txt";
+    std::string filename = "local_search_results_extra.txt";
 
 
     if(filename != ""){
@@ -775,12 +813,18 @@ int main(){
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
         std::vector <std::vector <int>> dataset = read_dataset(dataset_paths[i]);
         std::vector <std::vector <int>> distance_matrix = create_distance_matrix(dataset);
 
         std::string dataset_name;
         dataset_name += (char(65 + i));
         calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+        std::cout << "Dataset " << dataset_name << ": " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s\n";
 
         
     }
