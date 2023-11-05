@@ -660,7 +660,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 }
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 10; //200;
+    int iterations = 200;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
