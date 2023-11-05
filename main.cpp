@@ -491,7 +491,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
             }
         }
         else{
-            int random_offset = 0; //rand() % solution.size(); TODO FIX
+            int random_offset = rand() % solution.size(); //TODO FIX
             //int io = (i + random_offset) % solution.size(); // that's for greedy
 
             int i_old_node_iterating = 0;
@@ -507,7 +507,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 
             // Similar to steepest, but it needs to randomize whether it tries to add a new node or do an internal swap
             while(true){
-                int choice = 0; //rand() % 2; // TODO FIX
+                int choice = rand() % 2; // TODO FIX
 
                 // New node advance
                 if(choice == 0 && !new_node_finished){ 
@@ -621,7 +621,6 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                             int temp = solution[i_intra];
                             solution[i_intra] = solution[j_intra];
                             solution[j_intra] = temp;
-                            std::cout << "Found improvement" << "\n";
                             break;
                         }
                     }
@@ -641,7 +640,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
 }
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 5;//200;
+    int iterations = 200;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -654,18 +653,18 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     //algorithm_names.push_back("Greedy Regret");
     algorithm_names.push_back("Greedy Weighted");
     algorithm_names.push_back("Local Search00");
-    //algorithm_names.push_back("Local Search10");
-    //algorithm_names.push_back("Local Search01");
-    //algorithm_names.push_back("Local Search11");
+    algorithm_names.push_back("Local Search10");
+    algorithm_names.push_back("Local Search01");
+    algorithm_names.push_back("Local Search11");
 
     //best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
     //best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
     //best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
     best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
-    //best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
-    //best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
-    //best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
+    best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
+    best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
+    best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
