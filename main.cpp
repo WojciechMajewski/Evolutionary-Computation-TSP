@@ -659,6 +659,196 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
     return solution;
 }
 
+std::vector <int> local_candidate_moves(std::vector <std::vector <std::tuple <int, int>>> closest_nodes, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> solution;
+
+    solution = random_solution(dataset, distance_matrix);
+
+    // sort the starting solution, then for each of 200 check if in sorted, if yes advance sorted, if no add to available
+    std::vector <int> available_nodes;
+    std::vector <int> unavailable_nodes = solution;
+    std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+    // Creating a set of nodes that are not in the chosen path but could be placed there
+    int index = 0;
+    for(int i = 0; i < dataset.size(); i++){
+        if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+            index++;
+        }
+        else{
+            available_nodes.push_back(i);
+        }
+    }
+
+
+
+    for(int t = 0; t < 1000; t++){
+        int best_improvement = 0;
+        int new_node_index = -1;
+        int replaced_node_index = -1;
+
+        int first_edge_start_index = -1; // By definition edge end will be ((edge_start + 1) % size)
+        int second_edge_start_index = -1;
+
+        int first_to_switch_index = -1;
+        int second_to_switch_index = -1;
+
+        // Consider replacing nodes
+        
+        // Using candidate moves:
+        // For each node in solution, check if the next node could be replaced by any one of 10 best nodes.
+        // By adding distance to one of the 10 plus distance from it to the next node in solution
+
+        // This is only calculated for nodes inside the solution
+        for(int i = 0; i < solution.size(); i++){
+            for(int j = 0; j < 10; j++){
+                int neighbor_node = std::get<0>(closest_nodes[solution[i]][j]);
+                int neighbor_distance = std::get<1>(closest_nodes[solution[i]][j]);
+
+                int next_node = solution[(i+1) % solution.size()];
+                int further_next_node = solution[(i+2) % solution.size()];
+                
+                if(next_node == neighbor_node){
+                    continue;
+                }
+                
+
+                bool neighbor_inside = false;
+                int neighbor_index = 0;
+                for(int k = 0; k < solution.size(); k++){
+                    if(solution[k] == neighbor_node){
+                        neighbor_inside = true;
+                        neighbor_index = k;
+                        break;
+                    }
+                }
+                if(!neighbor_inside){
+                    for(int k = 0; k < available_nodes.size(); k++){
+                        if(available_nodes[k] == neighbor_node){
+                            neighbor_index = k;
+                            break;
+                        }
+                    }
+                }
+
+                // If neighbor_node on the path, consider an edge exchange
+                if(neighbor_inside){
+                    // Four nodes: node, next node and neighbor, next neighbor
+                    // Ends with: node, neighbor and next node, next neighbor
+
+                    // All need to be different!
+                    
+                    // If the neighbor is the previous node, edges can't be exchanged
+                    if((neighbor_index + 1) % solution.size() == i){
+                        continue;
+                    }
+
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[i], next_node, dataset, distance_matrix);
+                    old_cost += get_cost(neighbor_node, solution[(neighbor_index + 1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[neighbor_node][2];
+
+                    int cost_improvement = 0;
+                    cost_improvement -= neighbor_distance;
+                    cost_improvement -= get_cost(next_node, solution[(neighbor_index + 1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= dataset[next_node][2];
+                    
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > best_improvement){
+                        best_improvement = cost_improvement;
+
+                        first_edge_start_index = neighbor_index;
+                        second_edge_start_index = i; // As j is always smaller than i
+
+                        //new_node_index = -1;
+                    }
+
+                }
+                // If neighbor_node not on the path, consider replacing next_node with neighbor node (node replacement)
+                else{
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[i], next_node, dataset, distance_matrix);
+                    old_cost += get_cost(next_node, further_next_node, dataset, distance_matrix);
+
+                    int cost_improvement = 0;
+                    cost_improvement -= neighbor_distance;
+                    cost_improvement -= get_cost(neighbor_node, further_next_node, dataset, distance_matrix);
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > best_improvement){
+                        best_improvement = cost_improvement;
+                        replaced_node_index = (i+1) % solution.size();
+                        new_node_index = neighbor_index; // index from available nodes;
+                    }
+                }
+            }
+        }
+
+        /*
+        for(int i = 0; i < available_nodes.size(); i++){
+            for(int j = 0; j < 10; j++){
+                int neighbor_node = std::get<0>(closest_nodes[available_nodes[i]][j]);
+                int neighbor_distance = std::get<1>(closest_nodes[available_nodes[i]][j]);
+                
+                int neighbor_index = -1;
+                for(int k = 0; k < solution.size(); k++){
+                    if(solution[k] == neighbor_node){
+                        neighbor_index = k;
+                        break;
+                    }
+                }
+
+                if(neighbor_index == -1){ // Both the node and the neighbor are outside the path
+                    continue;
+                }
+
+                int neighbor_prev_index = (neighbor_index - 1 + solution.size()) % solution.size();
+                int neighbor_more_prev_index = (neighbor_index - 2 + solution.size()) % solution.size();
+
+                int old_cost = 0;
+                old_cost += get_cost(solution[neighbor_more_prev_index], solution[neighbor_prev_index], dataset, distance_matrix);
+                old_cost += get_cost(solution[neighbor_prev_index], solution[neighbor_index], dataset, distance_matrix);
+
+                int cost_improvement = 0;
+                cost_improvement -= neighbor_distance;
+                cost_improvement -= get_cost(solution[neighbor_more_prev_index], available_nodes[i], dataset, distance_matrix);
+
+                cost_improvement += old_cost;
+
+                if(cost_improvement > best_improvement){
+                    best_improvement = cost_improvement;
+                    replaced_node_index = neighbor_prev_index;
+                    new_node_index = i; // index from available nodes;
+                }
+
+                
+            }
+        }*/
+
+        if(best_improvement > 0){
+            // New node is best
+            if(new_node_index != -1){
+                int temp = solution[replaced_node_index];
+                solution[replaced_node_index] = available_nodes[new_node_index];
+                available_nodes[new_node_index] = temp;
+            }
+            // Then edge exchange is best
+            else{
+                std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
+            }
+        }
+        else{ // No improvement, break the local search loop, local optimum found!
+            return solution;
+        }
+
+    }
+
+    return solution;
+}
+
+
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
     int iterations = 200;
     std::vector <std::vector <int>> best_paths;
@@ -668,11 +858,41 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     std::vector <int> times;
     
     std::vector <std::string> algorithm_names;
+
+
+    
+    // Create candidate nodes for each node
+    // <index, distance>
+    std::vector <std::vector <std::tuple <int, int>>> closest_nodes;
+    for(int i = 0; i < dataset.size(); i++){
+        std::vector <std::tuple <int, int>> neighbours_and_distances;
+        for(int j = 0; j < dataset.size(); j++){  
+            if(i == j){
+                continue;
+            }
+            std::tuple <int, int> distance_and_index = std::make_tuple(get_cost(i, j, dataset, distance_matrix), j);
+            neighbours_and_distances.push_back(distance_and_index);
+
+        }
+
+        
+        std::sort(neighbours_and_distances.begin(), neighbours_and_distances.end()); 
+
+        std::vector <std::tuple <int, int>> ten_best;
+
+        for(int j = 0; j < 10; j++){
+            ten_best.push_back(std::make_tuple(std::get<1>(neighbours_and_distances[j]), std::get<0>(neighbours_and_distances[j])));
+        }
+
+        closest_nodes.push_back(ten_best);
+    }
+
+
+    /*
     algorithm_names.push_back("Nearest");
     algorithm_names.push_back("Greedy Cycle");
     algorithm_names.push_back("Greedy Regret");
     algorithm_names.push_back("Greedy Weighted");
-    /*
     /// Then Greedy Weighted starting
     algorithm_names.push_back("Local Search101");
     algorithm_names.push_back("Local Search111");
@@ -680,27 +900,31 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     algorithm_names.push_back("Local Search011");
     /// Then Random starting
     algorithm_names.push_back("Local Search100");
-    algorithm_names.push_back("Local Search110");
-    algorithm_names.push_back("Local Search000");
-    algorithm_names.push_back("Local Search010");
     */
+    algorithm_names.push_back("Local Search110");
+    //algorithm_names.push_back("Local Search000");
+    //algorithm_names.push_back("Local Search010");
+    algorithm_names.push_back("Local Candidate");
 
+
+    /*
     best_paths.push_back(nearest_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_cycle_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_2_regret_solution(0, dataset, distance_matrix));
     best_paths.push_back(greedy_weighted_solution(0, dataset, distance_matrix));
 
-    /*
     best_paths.push_back(local_search(true, false, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(true, true, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(false, false, 0, dataset, distance_matrix));
     best_paths.push_back(local_search(false, true, 0, dataset, distance_matrix));
 
     best_paths.push_back(local_search(true, false, -1, dataset, distance_matrix));
-    best_paths.push_back(local_search(true, true, -1, dataset, distance_matrix));
-    best_paths.push_back(local_search(false, false, -1, dataset, distance_matrix));
-    best_paths.push_back(local_search(false, true, -1, dataset, distance_matrix));
     */
+    best_paths.push_back(local_search(true, true, -1, dataset, distance_matrix));
+    //best_paths.push_back(local_search(false, false, -1, dataset, distance_matrix));
+    //best_paths.push_back(local_search(false, true, -1, dataset, distance_matrix));
+    best_paths.push_back(local_candidate_moves(closest_nodes, dataset, distance_matrix));
+    
 
     for(int i = 0; i < best_paths.size(); i++){
         best_scores.push_back(get_path_cost(best_paths[i], dataset, distance_matrix));
@@ -728,6 +952,9 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
             }
             if(algorithm_names[j] == "Greedy Weighted"){
                 solution = greedy_weighted_solution(i, dataset, distance_matrix);
+            }
+            if(algorithm_names[j] == "Local Candidate"){
+                solution = local_candidate_moves(closest_nodes, dataset, distance_matrix);
             }
             if(algorithm_names[j].substr(0, 12) == "Local Search"){
                 bool steepest;
@@ -800,7 +1027,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "old_algorithms_results.txt";
+    std::string filename = "candidate_moves_results.txt";
 
 
     if(filename != ""){
