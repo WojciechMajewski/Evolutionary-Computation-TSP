@@ -786,7 +786,7 @@ std::vector <int> local_candidate_moves(std::vector <std::vector <std::tuple <in
             }
         }
 
-        /*
+        
         for(int i = 0; i < available_nodes.size(); i++){
             for(int j = 0; j < 10; j++){
                 int neighbor_node = std::get<0>(closest_nodes[available_nodes[i]][j]);
@@ -825,7 +825,7 @@ std::vector <int> local_candidate_moves(std::vector <std::vector <std::tuple <in
 
                 
             }
-        }*/
+        }
 
         if(best_improvement > 0){
             // New node is best
@@ -1027,7 +1027,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "candidate_moves_results.txt";
+    std::string filename = "candidate_moves_outside_results.txt";
 
 
     if(filename != ""){
