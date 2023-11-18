@@ -662,8 +662,6 @@ std::vector <int> local_candidate_moves(std::vector <int> solution, std::vector 
         }
     }
 
-
-
     for(int t = 0; t < 1000; t++){
         int best_improvement = 0;
         int new_node_index = -1;
@@ -837,6 +835,757 @@ std::vector <int> local_candidate_moves(std::vector <int> solution, std::vector 
     return solution;
 }
 
+// Descending order
+bool sort_by_first(const std::vector<int>& v1, const std::vector<int>& v2){
+    return v1[0] > v2[0];
+}
+
+int get_index_to_insert_descending(const std::vector<std::vector<int>>& array, std::vector<int>& item){
+    int compared_index = 0;
+    int insert_index = array.size();
+
+    if (array.size() == 0 || (array[array.size() - 1][compared_index] > item[compared_index]))
+        return insert_index;
+    
+    int low = 0;
+    int high = array.size() - 1;
+    while (low <= high){
+        int mid = low + (high - low) / 2;
+        if (array[mid][compared_index] > item[compared_index]){
+            low = mid + 1;
+        }
+        else{
+            high = mid - 1;
+        }
+    }
+    insert_index = high + 1;
+    return insert_index;
+}
+
+
+std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> available_nodes;
+    std::vector <int> unavailable_nodes = solution;
+    std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+    int index = 0;
+    for(int i = 0; i < dataset.size(); i++){
+        if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+            index++;
+        }
+        else{
+            available_nodes.push_back(i);
+        }
+    }
+    
+    std::vector <std::vector <int>> improvement_list; // <improvement, (0 - node replacement / 1 - edge exchange), (cycle node, available node) / (edge1 start, edge1 end, edge2 start, edge2 end)>
+    // <improvement, 0 (node replacement), node, node before, node after, replacement node>
+    // <improvement, 1 (edge exchange), edge1 start node, edge1 end node, edge2 start node, edge2 end node>
+
+    // Initiate improvement list
+    for(int i = 0; i < solution.size(); i++){
+        int old_cost = 0;
+        old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+        for(int j = 0; j < available_nodes.size(); j++){
+            int cost_improvement = 0;
+            cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+            cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            cost_improvement += old_cost;
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
+                improvement_list.push_back(move);
+            }
+        }
+    }
+
+    for(int i = 0; i < solution.size(); i++){
+        for(int j = 0; (j+1) % solution.size() < i; j++){
+            if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+            int old_cost = 0;
+            int cost_improvement = 0;
+
+            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+            old_cost += dataset[solution[i]][2];
+
+            cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+            cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+            cost_improvement += old_cost;
+
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                improvement_list.push_back(move);
+            }
+        }
+    }
+
+    // Reversed edges (one of them)
+    for(int i = 0; i < solution.size(); i++){
+        for(int j = 0; (j+1) % solution.size() < i; j++){
+            if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+            int old_cost = 0;
+            int cost_improvement = 0;
+
+            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix); // Switched
+            old_cost += dataset[solution[i]][2];
+
+            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix); // j switched
+            cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix); // j switched
+            cost_improvement -= dataset[solution[j]][2]; // j switched
+
+            cost_improvement += old_cost;
+
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                improvement_list.push_back(move);
+            }
+        }
+    }
+
+    // Sort the available moves
+    std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
+    /*for(int i = 0; i < improvement_list.size(); i++){
+        for(int j = 0; j < improvement_list[i].size(); j++){
+            std::cout << improvement_list[i][j] << " ";
+        }
+        std::cout << "\n";
+    }*/
+
+    // 100 iterations instead of while(true)
+    for(int t = 0; t < 1000; t++){
+        // Evaluate new moves
+        bool found_improvement = false;
+        std::vector <std::vector <int>> to_insert;
+
+        for(int index = 0; index < improvement_list.size(); index++){
+
+            if(improvement_list[index][1] == 0){
+                
+                int node_index = 0;
+                for(;node_index < solution.size() && solution[node_index] != improvement_list[index][2]; node_index++);
+                if(node_index == solution.size()){ // No longer in solution
+                    continue;
+                }
+
+                // <improvement, 0 (node replacement), node, node before, node after, replacement node>
+
+                //if(solution[improvement_list[index][2]] != improvement_list[index][3]) continue; // Node no longer there
+
+                if(!((solution[(node_index-1 + solution.size()) % solution.size()] == improvement_list[index][4] &&
+                    solution[(node_index+1) % solution.size()] == improvement_list[index][3]) || 
+                    (solution[(node_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(node_index+1) % solution.size()] == improvement_list[index][4]))){ // If no longer 3 nodes in a row (either way)
+                    continue;
+                }
+                
+                int replacement_index = 0;
+                for(;replacement_index < available_nodes.size() && available_nodes[replacement_index] != improvement_list[index][5]; replacement_index++);
+                if(replacement_index == available_nodes.size()){ // No longer in available
+                    continue;
+                }
+                //if(available_nodes[improvement_list[index][6]] != improvement_list[index][7]) continue;
+
+                // FOUND legal node replacement
+                
+                found_improvement = true;
+                // update the solution
+
+                int temp = solution[node_index];
+                solution[node_index] = available_nodes[replacement_index];
+                available_nodes[replacement_index] = temp;
+
+                // add new moves for the replaced node, node before and after
+                for(int offset = -1; offset < 2; offset++){
+                    int i = (node_index + offset + solution.size()) % solution.size();
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    for(int j = 0; j < available_nodes.size(); j++){
+                        int cost_improvement = 0;
+                        cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                        cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement += old_cost;
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
+
+                            to_insert.push_back(move);
+                            
+                            //improvement_list.insert(improvement_list.begin() + get_index_to_insert_descending(improvement_list, move), move);
+                        }
+                    }
+                }
+                // New moves replacing with the new available node
+                for(int i = 0; i < solution.size(); i++){
+                    int j = replacement_index;
+
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+
+                    int cost_improvement = 0;
+
+                    cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+
+                    cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
+                        
+                        to_insert.push_back(move);
+                    }
+                    
+                }
+
+                // add new edge moves for this new node
+                for(int i = 0; i < solution.size(); i++){
+                    int j = node_index;
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                for(int i = 0; i < solution.size(); i++){
+                    int j = (node_index-1 + solution.size()) % solution.size();
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                // Switched edges
+                for(int i = 0; i < solution.size(); i++){
+                    int j = node_index;
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix); // Switched
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);// Switched
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);// Switched
+                    cost_improvement -= dataset[solution[j]][2];// Switched
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                for(int i = 0; i < solution.size(); i++){
+                    int j = (node_index-1 + solution.size()) % solution.size();
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[j]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                
+                // Remove moves which were not applicable
+                improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
+                break;
+            }
+            else{
+                // <improvement, 1 (edge exchange), edge1 start node, edge1 end node, edge2 start node, edge2 end node
+
+                int edge1_start_index = 0;
+                for(;edge1_start_index < solution.size() && solution[edge1_start_index] != improvement_list[index][2]; edge1_start_index++);
+                if(edge1_start_index == solution.size()){ // No longer in solution, so remove
+                    continue;
+                }
+                int edge2_start_index = 0;
+                for(;edge2_start_index < solution.size() && solution[edge2_start_index] != improvement_list[index][4]; edge2_start_index++);
+                if(edge2_start_index == solution.size()){ // No longer in solution, so remove
+                    continue;
+                }
+                
+                if(((solution[(edge1_start_index+1) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]) || 
+                    (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]))){ // Twisted, 1 edge i sin a different direction than the other, save for later
+                    to_insert.push_back(improvement_list[index]);
+                    continue;
+                }
+                if(!((solution[(edge1_start_index+1) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]) || 
+                    (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]))){ // If not twisted and not placed correctly, then move no longer exists
+                    continue; // !!! THIS IS BUGGED, AS LOOKING THE OTHER WAY MEANS THE REVERSE OPERATION SHOULD BE HANDLED DIFFERENTLY
+                }
+
+                if((solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5])){ // Both reversed, so just take a step back
+                    edge1_start_index = (edge1_start_index-1 + solution.size()) % solution.size();
+                    edge2_start_index = (edge2_start_index-1 + solution.size()) % solution.size();
+                } // !!! FIX?
+
+                // FOUND legal edge exchange
+                found_improvement = true;
+                // update the solution
+                if(((edge1_start_index + 1) % solution.size()) > ((edge2_start_index + 1) % solution.size())){
+                    int temp = edge1_start_index;
+                    edge1_start_index = edge2_start_index;
+                    edge2_start_index = temp;
+                }
+
+                std::reverse(solution.begin() + ((edge1_start_index + 1) % solution.size()), solution.begin() + ((edge2_start_index + 1) % solution.size()));
+                
+
+                // Add new moves for all nodes of the exchanged edges
+                std::vector <int> nodes_to_update{edge1_start_index, int((edge1_start_index + 1) % solution.size()), edge2_start_index, int((edge2_start_index + 1) % solution.size())};
+                for(int i = 0; i < solution.size(); i++){
+                    for(int k = 0; k < nodes_to_update.size(); k++){
+                        int j = nodes_to_update[k];
+                        if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                            improvement_list.push_back(move);
+                        }
+                    }
+                }
+                
+
+                // Remove moves which were not applicable
+                improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
+                break;
+            }
+        }
+
+        if(!found_improvement){
+            return solution;
+        }
+
+        for(int i = 0; i < to_insert.size(); i++){
+            improvement_list.insert(improvement_list.begin() + get_index_to_insert_descending(improvement_list, to_insert[i]), to_insert[i]);
+        }
+        
+    }
+
+    return solution;
+}
+
+
+std::vector <int> local_delta_indexes(std::vector <int> solution, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> available_nodes;
+    std::vector <int> unavailable_nodes = solution;
+    std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+    int index = 0;
+    for(int i = 0; i < dataset.size(); i++){
+        if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+            index++;
+        }
+        else{
+            available_nodes.push_back(i);
+        }
+    }
+    
+    std::vector <std::vector <int>> improvement_list; // <improvement, (0 - node replacement / 1 - edge exchange), (cycle node, available node) / (edge1 start, edge1 end, edge2 start, edge2 end)>
+    // <improvement, 0 (node replacement), node index, node, node before, node after, replacement index, replacement node>
+    // <improvement, 1 (edge exchange), edge1 start index, edge1 start node, edge1 end node, edge2 start index, edge2 start node, edge2 end node
+
+    // Initiate improvement list
+    for(int i = 0; i < solution.size(); i++){
+        int old_cost = 0;
+        old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+        for(int j = 0; j < available_nodes.size(); j++){
+            int cost_improvement = 0;
+            cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+            cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            cost_improvement += old_cost;
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 0, i, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], j, available_nodes[j]};
+                improvement_list.push_back(move);
+            }
+        }
+    }
+
+    for(int i = 0; i < solution.size(); i++){
+        for(int j = 0; (j+1) % solution.size() < i; j++){
+            if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+            int old_cost = 0;
+            int cost_improvement = 0;
+
+            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+            old_cost += dataset[solution[i]][2];
+
+            cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+            cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+            cost_improvement += old_cost;
+
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 1, i, solution[i], solution[(i+1) % solution.size()], j, solution[j], solution[(j+1) % solution.size()]};
+                improvement_list.push_back(move);
+            }
+        }
+    }
+
+    // Sort the available moves
+    std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
+    /*for(int i = 0; i < improvement_list.size(); i++){
+        for(int j = 0; j < improvement_list[i].size(); j++){
+            std::cout << improvement_list[i][j] << " ";
+        }
+        std::cout << "\n";
+    }*/
+
+    // 100 iterations instead of while(true)
+    for(int t = 0; t < 1000; t++){
+        // Evaluate new moves
+        bool found_improvement = false;
+        std::vector <std::vector <int>> to_insert;
+
+        for(int index = 0; index < improvement_list.size(); index++){
+
+            if(improvement_list[index][1] == 0){
+                
+                /*int node_index = 0;
+                for(;node_index < solution.size() && solution[node_index] != improvement_list[index][2]; node_index++);
+                if(node_index == solution.size()){ // No longer in solution
+                    continue;
+                }*/
+
+                // <improvement, 0 (node replacement), node index, node, node before, node after, replacement index, replacement node>
+
+                if(solution[improvement_list[index][2]] != improvement_list[index][3]) continue; // Node no longer there
+
+                if(!((solution[(improvement_list[index][2]-1 + solution.size()) % solution.size()] == improvement_list[index][4] &&
+                    solution[(improvement_list[index][2]+1) % solution.size()] == improvement_list[index][5]) || 
+                    (solution[(improvement_list[index][2]-1 + solution.size()) % solution.size()] == improvement_list[index][5] &&
+                    solution[(improvement_list[index][2]+1) % solution.size()] == improvement_list[index][4]))){ // If no longer 3 nodes in a row (either way)
+                    continue;
+                }
+                
+                /*int replacement_index = 0;
+                for(;replacement_index < available_nodes.size() && available_nodes[replacement_index] != improvement_list[index][5]; replacement_index++);
+                if(replacement_index == available_nodes.size()){ // No longer in available
+                    continue;
+                }*/
+                if(available_nodes[improvement_list[index][6]] != improvement_list[index][7]) continue;
+
+                // FOUND legal node replacement
+                
+                found_improvement = true;
+                // update the solution
+
+                int temp = solution[improvement_list[index][2]];
+                solution[improvement_list[index][2]] = available_nodes[improvement_list[index][6]];
+                available_nodes[improvement_list[index][6]] = temp;
+
+                // add new moves for the replaced node, node before and after
+                for(int offset = -1; offset < 2; offset++){
+                    int i = (improvement_list[index][2] + offset + solution.size()) % solution.size();
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    for(int j = 0; j < available_nodes.size(); j++){
+                        int cost_improvement = 0;
+                        cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                        cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement += old_cost;
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 0, i, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], j, available_nodes[j]};
+
+                            to_insert.push_back(move);
+                            
+                            //improvement_list.insert(improvement_list.begin() + get_index_to_insert_descending(improvement_list, move), move);
+                        }
+                    }
+                }
+                // New moves replacing with the new available node
+                for(int i = 0; i < solution.size(); i++){
+                    int j = improvement_list[index][6];
+
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+
+                    int cost_improvement = 0;
+
+                    cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+
+                    cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 0, i, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], j, available_nodes[j]};
+                        
+                        to_insert.push_back(move);
+                    }
+                    
+                }
+
+                // add new edge moves for this new node
+                for(int i = 0; i < solution.size(); i++){
+                    int j = improvement_list[index][2];
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, i, solution[i], solution[(i+1) % solution.size()], j, solution[j], solution[(j+1) % solution.size()]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                for(int i = 0; i < solution.size(); i++){
+                    int j = (improvement_list[index][2]-1 + solution.size()) % solution.size();
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, i, solution[i], solution[(i+1) % solution.size()], j, solution[j], solution[(j+1) % solution.size()]};
+                        
+                        to_insert.push_back(move);
+                    }
+                
+                }
+                
+                // Remove moves which were not applicable
+                improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
+                break;
+            }
+            else{
+                // <improvement, 1 (edge exchange), edge1 start index, edge1 start node, edge1 end node, edge2 start index, edge2 start node, edge2 end node
+                if(solution[improvement_list[index][2]] != improvement_list[index][3]) continue;
+                if(solution[improvement_list[index][5]] != improvement_list[index][6]) continue;
+
+                if(solution[(improvement_list[index][2] + 1) % solution.size()] != improvement_list[index][4]) continue;
+                if(solution[(improvement_list[index][5] + 1) % solution.size()] != improvement_list[index][7]) continue;
+
+
+                /*int edge1_start_index = 0;
+                for(;edge1_start_index < solution.size() && solution[edge1_start_index] != improvement_list[index][2]; edge1_start_index++);
+                if(edge1_start_index == solution.size()){ // No longer in solution, so remove
+                    continue;
+                }
+                int edge2_start_index = 0;
+                for(;edge2_start_index < solution.size() && solution[edge2_start_index] != improvement_list[index][4]; edge2_start_index++);
+                if(edge2_start_index == solution.size()){ // No longer in solution, so remove
+                    continue;
+                }*/
+                /*
+                if(((solution[(edge1_start_index+1) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]) || 
+                    (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]))){ // Twisted, 1 edge i sin a different direction than the other, save for later
+                    saved_edges.push_back(improvement_list[index]);
+                    continue;
+                }
+                if(!((solution[(edge1_start_index+1) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]) || 
+                    (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
+                    solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]))){ // If not twisted and not placed correctly, then move no longer exists
+                    continue; // !!! THIS IS BUGGED, AS LOOKING THE OTHER WAY MEANS THE REVERSE OPERATION SHOULD BE HANDLED DIFFERENTLY
+                }*/
+
+                // FOUND legal edge exchange
+                found_improvement = true;
+                // update the solution
+                if(((improvement_list[index][2] + 1) % solution.size()) > ((improvement_list[index][5] + 1) % solution.size())){
+                    int temp = improvement_list[index][2];
+                    improvement_list[index][2] = improvement_list[index][5];
+                    improvement_list[index][5] = temp;
+                }
+
+                std::reverse(solution.begin() + ((improvement_list[index][2] + 1) % solution.size()), solution.begin() + ((improvement_list[index][5] + 1) % solution.size()));
+                
+
+                // Add new moves for all nodes which were reversed (including edge1 start, end, edge2 start and end and all inbetween)
+                for(int i = (improvement_list[index][2] + 1) % solution.size(); i <= (improvement_list[index][5] + 1) % solution.size(); i++){
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    for(int j = 0; j < available_nodes.size(); j++){
+                        int cost_improvement = 0;
+                        cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                        cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement += old_cost;
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 0, i, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], j, available_nodes[j]};
+                            to_insert.push_back(move);
+                        }
+                    }
+                }
+                int i = improvement_list[index][2];
+                int old_cost = 0;
+                old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                for(int j = 0; j < available_nodes.size(); j++){
+                    int cost_improvement = 0;
+                    cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                    cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement += old_cost;
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 0, i, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], j, available_nodes[j]};
+                        to_insert.push_back(move);
+                    }
+                }
+
+                // add new edge moves for this new node
+                // New edges exchanges for all nodes in the reversed part into all nodes in the part that did not change
+                
+                // Experiment with evaluating all edges in this step
+
+                for(int i = (improvement_list[index][2] + 1) % solution.size(); i <= (improvement_list[index][5] + 1) % solution.size(); i++){
+                    for(int j = 0; j < solution.size(); j++){
+                        //if((improvement_list[index][2] + 1) % solution.size() <= j || j < (improvement_list[index][5] + 1) % solution.size()) continue;
+                        if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, i, solution[i], solution[(i+1) % solution.size()], j, solution[j], solution[(j+1) % solution.size()]};
+                            to_insert.push_back(move);
+                        }
+                    }
+                }
+                i = improvement_list[index][2];
+                for(int j = 0; j < solution.size(); j++){
+                    //if((improvement_list[index][2] + 1) % solution.size() <= j || j < (improvement_list[index][5] + 1) % solution.size()) continue;
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, i, solution[i], solution[(i+1) % solution.size()], j, solution[j], solution[(j+1) % solution.size()]};
+                        to_insert.push_back(move);
+                    }
+                }
+
+                // Remove moves which were not applicable
+                improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
+                break;
+            }
+        }
+
+        if(!found_improvement){
+            return solution;
+        }
+
+        for(int i = 0; i < to_insert.size(); i++){
+            improvement_list.insert(improvement_list.begin() + get_index_to_insert_descending(improvement_list, to_insert[i]), to_insert[i]);
+        }
+        
+    }
+
+    return solution;
+}
+
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
     int iterations = 200;
@@ -900,8 +1649,8 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     */
 
     algorithm_names.push_back("Random Baseline");
+    algorithm_names.push_back("Local Delta");
     algorithm_names.push_back("Local Search110");
-    algorithm_names.push_back("Local Search100");
 
     //algorithm_names.push_back("Cand Comp");
     //algorithm_names.push_back("Local Candidate");
@@ -925,8 +1674,8 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     */
 
     best_paths.push_back(base_solutions[0]);
+    best_paths.push_back(local_delta(base_solutions[0], dataset, distance_matrix));
     best_paths.push_back(local_search(true, true, base_solutions[0], dataset, distance_matrix));
-    best_paths.push_back(local_search(true, false, base_solutions[0], dataset, distance_matrix));
 
     //best_paths.push_back(local_candidate_moves(base_solutions[0], closest_nodes, dataset, distance_matrix));
     
@@ -961,6 +1710,9 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
             }
             if(algorithm_names[j] == "Local Candidate"){
                 solution = local_candidate_moves(base_solutions[i], closest_nodes, dataset, distance_matrix);
+            }
+            if(algorithm_names[j] == "Local Delta"){
+                solution = local_delta(base_solutions[i], dataset, distance_matrix);
             }
             if(algorithm_names[j].substr(0, 12) == "Local Search"){
                 bool steepest;
