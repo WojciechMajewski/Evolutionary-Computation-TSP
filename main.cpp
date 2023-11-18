@@ -898,7 +898,8 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             }
         }
     }
-
+    
+    // Edges
     for(int i = 0; i < solution.size(); i++){
         for(int j = 0; (j+1) % solution.size() < i; j++){
             if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
@@ -922,6 +923,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         }
     }
 
+    /*
     // Reversed edges (one of them)
     for(int i = 0; i < solution.size(); i++){
         for(int j = 0; (j+1) % solution.size() < i; j++){
@@ -945,6 +947,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             }
         }
     }
+    */
 
     // Sort the available moves
     std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
@@ -1088,6 +1091,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 
                 }
+                /*
                 // Switched edges
                 for(int i = 0; i < solution.size(); i++){
                     int j = node_index;
@@ -1135,6 +1139,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 
                 }
+                */
                 
                 // Remove moves which were not applicable
                 improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
