@@ -483,8 +483,8 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         // Edge exchange through flipping a subpath
                         std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
                         
-                        //std::cout << "[imp " << best_improvement << " edge " << solution[first_edge_start_index] << "-" << solution[(first_edge_start_index + 1) % solution.size()];
-                        //std::cout << " into " << solution[second_edge_start_index] << "-" << solution[(second_edge_start_index + 1) % solution.size()];
+                        //std::cout << "[imp " << best_improvement << " edge " << solution[first_edge_start_index] << "->" << solution[(first_edge_start_index + 1) % solution.size()];
+                        //std::cout << " into " << solution[second_edge_start_index] << "->" << solution[(second_edge_start_index + 1) % solution.size()];
                         //std::cout << " in " << first_edge_start_index << " and " << second_edge_start_index << "], ";
                     }
                     else{ // Then node exchange worked
@@ -933,7 +933,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         }
     }
 
-    /*
+    ///*
     // Reversed edges (one of them)
     for(int i = 0; i < solution.size(); i++){
         for(int j = 0; (j+1) % solution.size() < i; j++){
@@ -957,7 +957,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             }
         }
     }
-    */
+    //*/
 
     // Sort the available moves
     std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
@@ -1079,7 +1079,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     int old_cost = 0;
                     int cost_improvement = 0;
 
-                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);  // This could be calculated outside
                     old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
                     old_cost += dataset[solution[i]][2];
 
@@ -1096,7 +1096,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 
                 }
-                /*
+                ///*
                 // Switched edges
                 for(int i = 0; i < solution.size(); i++){
                     int j = node_index;
@@ -1144,7 +1144,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 
                 }
-                */
+                //*/
                 
                 // Remove moves which were not applicable
                 improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
@@ -1167,7 +1167,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 if(((solution[(edge1_start_index+1) % solution.size()] == improvement_list[index][3] &&
                     solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]) || 
                     (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
-                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]))){ // Twisted, 1 edge i sin a different direction than the other, save for later
+                    solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]))){ // Twisted, 1 edge is in a different direction than the other, save for later
                     to_insert.push_back(improvement_list[index]);
                     continue;
                 }
@@ -1175,14 +1175,15 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     solution[(edge2_start_index+1) % solution.size()] == improvement_list[index][5]) || 
                     (solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
                     solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5]))){ // If not twisted and not placed correctly, then move no longer exists
-                    continue; // !!! THIS IS BUGGED, AS LOOKING THE OTHER WAY MEANS THE REVERSE OPERATION SHOULD BE HANDLED DIFFERENTLY
+                    continue;
                 }
-
+                
+                // Perform operation in reverse if both edges are reversed
                 if((solution[(edge1_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][3] &&
                     solution[(edge2_start_index-1 + solution.size()) % solution.size()] == improvement_list[index][5])){ // Both reversed, so just take a step back
                     edge1_start_index = (edge1_start_index-1 + solution.size()) % solution.size();
                     edge2_start_index = (edge2_start_index-1 + solution.size()) % solution.size();
-                } // !!! FIX?
+                }
 
                 // FOUND legal edge exchange
                 found_improvement = true;
@@ -1195,12 +1196,63 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
                 std::reverse(solution.begin() + ((edge1_start_index + 1) % solution.size()), solution.begin() + ((edge2_start_index + 1) % solution.size()));
                 
-                //std::cout << "[imp " << improvement_list[index][0] << " edge " << solution[edge1_start_index] << "-" << solution[(edge1_start_index + 1) % solution.size()];
-                //std::cout << " into " << solution[edge2_start_index] << "-" << solution[(edge2_start_index + 1) % solution.size()];
-                //std::cout << " in " << edge1_start_index << " and " << edge2_start_index << "], ";                
+                //std::cout << "[imp " << improvement_list[index][0] << " edge " << solution[edge1_start_index] << "->" << solution[(edge1_start_index + 1) % solution.size()];
+                //std::cout << " into " << solution[edge2_start_index] << "->" << solution[(edge2_start_index + 1) % solution.size()];
+                //std::cout << " in " << edge1_start_index << " and " << edge2_start_index << "], ";    
 
                 // Add new moves for all nodes of the exchanged edges
                 std::vector <int> nodes_to_update{edge1_start_index, int((edge1_start_index + 1) % solution.size()), edge2_start_index, int((edge2_start_index + 1) % solution.size())};
+                for(int i = 0; i < solution.size(); i++){
+                    for(int k = 0; k < 2; k++){
+                        int j = nodes_to_update[k*2];
+                        if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                            to_insert.push_back(move);
+
+                        }
+                    }
+                }
+                for(int i = 0; i < solution.size(); i++){
+                    for(int k = 0; k < 2; k++){
+                        int j = nodes_to_update[k*2];
+                        if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix); // Switch
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[j]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                            to_insert.push_back(move);
+
+                        }
+                    }
+                }
+                
+                // No reversed
+                /*
                 for(int i = 0; i < solution.size(); i++){
                     for(int j = int((edge1_start_index + 1) % solution.size()); j <= int((edge2_start_index + 1) % solution.size()); j++){
                         //int j = nodes_to_update[k];
@@ -1244,6 +1296,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                         to_insert.push_back(move);
                     }
                 }
+                */
                 // And nodes
                 for(int k = 0; k < nodes_to_update.size(); k++){
                     int i = nodes_to_update[k];
@@ -1839,9 +1892,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    dataset_paths.push_back("Data/TSPB.csv");
-    dataset_paths.push_back("Data/TSPC.csv");
-    dataset_paths.push_back("Data/TSPD.csv");
+    //dataset_paths.push_back("Data/TSPB.csv");
+    //dataset_paths.push_back("Data/TSPC.csv");
+    //dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
