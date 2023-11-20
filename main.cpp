@@ -1202,8 +1202,8 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 // Add new moves for all nodes of the exchanged edges
                 std::vector <int> nodes_to_update{edge1_start_index, int((edge1_start_index + 1) % solution.size()), edge2_start_index, int((edge2_start_index + 1) % solution.size())};
                 for(int i = 0; i < solution.size(); i++){
-                    for(int k = 0; k < nodes_to_update.size(); k++){
-                        int j = nodes_to_update[k];
+                    for(int j = int((edge1_start_index + 1) % solution.size()); j <= int((edge2_start_index + 1) % solution.size()); j++){
+                        //int j = nodes_to_update[k];
                         if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
                         int old_cost = 0;
                         int cost_improvement = 0;
@@ -1222,6 +1222,26 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                             std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
                             to_insert.push_back(move);
                         }
+                    }
+                    
+                    int j = edge1_start_index;
+                    if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
+                    int old_cost = 0;
+                    int cost_improvement = 0;
+
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += get_cost(solution[j], solution[(j+1) % solution.size()], dataset, distance_matrix);
+                    old_cost += dataset[solution[i]][2];
+
+                    cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement -= get_cost(solution[j], solution[i], dataset, distance_matrix);
+                    cost_improvement -= dataset[solution[(j+1) % solution.size()]][2];
+
+                    cost_improvement += old_cost;
+
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
+                        to_insert.push_back(move);
                     }
                 }
                 // And nodes
