@@ -328,6 +328,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
     std::vector <int> unavailable_nodes = solution;
     std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
 
+    std::cout << "\n\nLOCAL SEARCH \navailable: \n";
     int index = 0;
     for(int i = 0; i < dataset.size(); i++){
         if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
@@ -465,9 +466,12 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
             if(best_improvement > 0){
                 if(new_node_index != -1){ // Then new node is best
                 
+                    std::cout << "[imp " << best_improvement << " node " << solution[replacing_node_index] << " into " << available_nodes[new_node_index] << " in " << replacing_node_index << "], ";
+
                     int temp = solution[replacing_node_index];
                     solution[replacing_node_index] = available_nodes[new_node_index];
                     available_nodes[new_node_index] = temp;
+                    
                 }
                 else{
                     if(edges_exchange){ // Then edge exchange worked
@@ -478,6 +482,10 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         }
                         // Edge exchange through flipping a subpath
                         std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
+                        
+                        std::cout << "[imp " << best_improvement << " edge " << solution[first_edge_start_index] << "-" << solution[(first_edge_start_index + 1) % solution.size()];
+                        std::cout << " into " << solution[second_edge_start_index] << "-" << solution[(second_edge_start_index + 1) % solution.size()];
+                        std::cout << " in " << first_edge_start_index << " and " << second_edge_start_index << "], ";
                     }
                     else{ // Then node exchange worked
                     
@@ -868,6 +876,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     std::vector <int> unavailable_nodes = solution;
     std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
 
+    std::cout << "\n\nDELTA \navailable: \n";
     int index = 0;
     for(int i = 0; i < dataset.size(); i++){
         if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
@@ -888,6 +897,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
         old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
         for(int j = 0; j < available_nodes.size(); j++){
+
             int cost_improvement = 0;
             cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
             cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
@@ -951,12 +961,6 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
     // Sort the available moves
     std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
-    /*for(int i = 0; i < improvement_list.size(); i++){
-        for(int j = 0; j < improvement_list[i].size(); j++){
-            std::cout << improvement_list[i][j] << " ";
-        }
-        std::cout << "\n";
-    }*/
 
     // 100 iterations instead of while(true)
     for(int t = 0; t < 1000; t++){
@@ -993,6 +997,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 //if(available_nodes[improvement_list[index][6]] != improvement_list[index][7]) continue;
 
                 // FOUND legal node replacement
+                std::cout << "[imp " << improvement_list[index][0] << " node " << solution[node_index] << " into " << available_nodes[replacement_index] << " in " << node_index << "], ";
                 
                 found_improvement = true;
                 // update the solution
@@ -1190,6 +1195,9 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
                 std::reverse(solution.begin() + ((edge1_start_index + 1) % solution.size()), solution.begin() + ((edge2_start_index + 1) % solution.size()));
                 
+                std::cout << "[imp " << improvement_list[index][0] << " edge " << solution[edge1_start_index] << "-" << solution[(edge1_start_index + 1) % solution.size()];
+                std::cout << " into " << solution[edge2_start_index] << "-" << solution[(edge2_start_index + 1) % solution.size()];
+                std::cout << " in " << edge1_start_index << " and " << edge2_start_index << "], ";                
 
                 // Add new moves for all nodes of the exchanged edges
                 std::vector <int> nodes_to_update{edge1_start_index, int((edge1_start_index + 1) % solution.size()), edge2_start_index, int((edge2_start_index + 1) % solution.size())};
@@ -1212,11 +1220,27 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
                         if(cost_improvement > 0){
                             std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[j], solution[(j+1) % solution.size()]};
-                            improvement_list.push_back(move);
+                            to_insert.push_back(move);
                         }
                     }
                 }
-                
+                // And nodes
+                for(int k = 0; k < nodes_to_update.size(); k++){
+                    int i = nodes_to_update[k];
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    for(int j = 0; j < available_nodes.size(); j++){
+                        int cost_improvement = 0;
+                        cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                        cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement += old_cost;
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
+                            to_insert.push_back(move);
+                        }
+                    }
+                }
 
                 // Remove moves which were not applicable
                 improvement_list.erase(improvement_list.begin(), improvement_list.begin() + index+1);
@@ -1299,12 +1323,6 @@ std::vector <int> local_delta_indexes(std::vector <int> solution, std::vector <s
 
     // Sort the available moves
     std::sort(improvement_list.begin(), improvement_list.end(), sort_by_first);
-    /*for(int i = 0; i < improvement_list.size(); i++){
-        for(int j = 0; j < improvement_list[i].size(); j++){
-            std::cout << improvement_list[i][j] << " ";
-        }
-        std::cout << "\n";
-    }*/
 
     // 100 iterations instead of while(true)
     for(int t = 0; t < 1000; t++){
@@ -1593,7 +1611,7 @@ std::vector <int> local_delta_indexes(std::vector <int> solution, std::vector <s
 
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 200;
+    int iterations = 1;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -1801,9 +1819,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    dataset_paths.push_back("Data/TSPB.csv");
-    dataset_paths.push_back("Data/TSPC.csv");
-    dataset_paths.push_back("Data/TSPD.csv");
+    //dataset_paths.push_back("Data/TSPB.csv");
+    //dataset_paths.push_back("Data/TSPC.csv");
+    //dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
@@ -1818,7 +1836,7 @@ int main(){
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-        std::cout << "Dataset " << dataset_name << ": " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s\n";
+        std::cout << "\nDataset " << dataset_name << ": " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s\n";
 
         
     }
