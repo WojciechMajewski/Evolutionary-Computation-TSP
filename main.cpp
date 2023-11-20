@@ -328,7 +328,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
     std::vector <int> unavailable_nodes = solution;
     std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
 
-    std::cout << "\n\nLOCAL SEARCH \navailable: \n";
+    //std::cout << "\n\nLOCAL SEARCH  \n";
     int index = 0;
     for(int i = 0; i < dataset.size(); i++){
         if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
@@ -466,7 +466,7 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
             if(best_improvement > 0){
                 if(new_node_index != -1){ // Then new node is best
                 
-                    std::cout << "[imp " << best_improvement << " node " << solution[replacing_node_index] << " into " << available_nodes[new_node_index] << " in " << replacing_node_index << "], ";
+                    //std::cout << "[imp " << best_improvement << " node " << solution[replacing_node_index] << " into " << available_nodes[new_node_index] << " in " << replacing_node_index << "], ";
 
                     int temp = solution[replacing_node_index];
                     solution[replacing_node_index] = available_nodes[new_node_index];
@@ -483,9 +483,9 @@ std::vector <int> local_search(bool steepest_neighborhood, bool edges_exchange, 
                         // Edge exchange through flipping a subpath
                         std::reverse(solution.begin() + ((first_edge_start_index + 1) % solution.size()), solution.begin() + ((second_edge_start_index + 1) % solution.size()));
                         
-                        std::cout << "[imp " << best_improvement << " edge " << solution[first_edge_start_index] << "-" << solution[(first_edge_start_index + 1) % solution.size()];
-                        std::cout << " into " << solution[second_edge_start_index] << "-" << solution[(second_edge_start_index + 1) % solution.size()];
-                        std::cout << " in " << first_edge_start_index << " and " << second_edge_start_index << "], ";
+                        //std::cout << "[imp " << best_improvement << " edge " << solution[first_edge_start_index] << "-" << solution[(first_edge_start_index + 1) % solution.size()];
+                        //std::cout << " into " << solution[second_edge_start_index] << "-" << solution[(second_edge_start_index + 1) % solution.size()];
+                        //std::cout << " in " << first_edge_start_index << " and " << second_edge_start_index << "], ";
                     }
                     else{ // Then node exchange worked
                     
@@ -876,7 +876,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     std::vector <int> unavailable_nodes = solution;
     std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
 
-    std::cout << "\n\nDELTA \navailable: \n";
+    //std::cout << "\n\nDELTA \n";
     int index = 0;
     for(int i = 0; i < dataset.size(); i++){
         if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
@@ -997,7 +997,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 //if(available_nodes[improvement_list[index][6]] != improvement_list[index][7]) continue;
 
                 // FOUND legal node replacement
-                std::cout << "[imp " << improvement_list[index][0] << " node " << solution[node_index] << " into " << available_nodes[replacement_index] << " in " << node_index << "], ";
+                //std::cout << "[imp " << improvement_list[index][0] << " node " << solution[node_index] << " into " << available_nodes[replacement_index] << " in " << node_index << "], ";
                 
                 found_improvement = true;
                 // update the solution
@@ -1195,9 +1195,9 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
                 std::reverse(solution.begin() + ((edge1_start_index + 1) % solution.size()), solution.begin() + ((edge2_start_index + 1) % solution.size()));
                 
-                std::cout << "[imp " << improvement_list[index][0] << " edge " << solution[edge1_start_index] << "-" << solution[(edge1_start_index + 1) % solution.size()];
-                std::cout << " into " << solution[edge2_start_index] << "-" << solution[(edge2_start_index + 1) % solution.size()];
-                std::cout << " in " << edge1_start_index << " and " << edge2_start_index << "], ";                
+                //std::cout << "[imp " << improvement_list[index][0] << " edge " << solution[edge1_start_index] << "-" << solution[(edge1_start_index + 1) % solution.size()];
+                //std::cout << " into " << solution[edge2_start_index] << "-" << solution[(edge2_start_index + 1) % solution.size()];
+                //std::cout << " in " << edge1_start_index << " and " << edge2_start_index << "], ";                
 
                 // Add new moves for all nodes of the exchanged edges
                 std::vector <int> nodes_to_update{edge1_start_index, int((edge1_start_index + 1) % solution.size()), edge2_start_index, int((edge2_start_index + 1) % solution.size())};
@@ -1223,7 +1223,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                             to_insert.push_back(move);
                         }
                     }
-                    
+
                     int j = edge1_start_index;
                     if(j == i || j == (i+1) % solution.size() || (j+1) % solution.size() == i) continue; // catch intersections
                     int old_cost = 0;
@@ -1631,7 +1631,7 @@ std::vector <int> local_delta_indexes(std::vector <int> solution, std::vector <s
 
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 1;
+    int iterations = 10;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -1839,9 +1839,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    //dataset_paths.push_back("Data/TSPB.csv");
-    //dataset_paths.push_back("Data/TSPC.csv");
-    //dataset_paths.push_back("Data/TSPD.csv");
+    dataset_paths.push_back("Data/TSPB.csv");
+    dataset_paths.push_back("Data/TSPC.csv");
+    dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
