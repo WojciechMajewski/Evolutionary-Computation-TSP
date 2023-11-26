@@ -1733,6 +1733,30 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         }
     }
 
+    /*// Reversed Edges
+    for(int i = 0; i < solution.size(); i++){
+        for(int j = 0; j < i - 1; j++){
+            if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
+            int old_cost = 0;
+            int cost_improvement = 0;
+
+            old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix);
+            old_cost += dataset[solution[i]][2];
+
+            cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+            cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);
+            cost_improvement -= dataset[solution[j]][2];
+
+            cost_improvement += old_cost;
+
+            if(cost_improvement > 0){
+                std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                improvement_list.push(move);
+            }
+        }
+    }*/
+
     // Nodes
     for(int i = 0; i < solution.size(); i++){
         int old_cost = 0;
@@ -1763,8 +1787,6 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     while(!improvement_list.empty()){
         current_move = improvement_list.top();
         improvement_list.pop();
-        //current_move = improvement_list.front();
-        //improvement_list.erase(improvement_list.begin());
 
         bool applicable = false;
         int type = -1;
@@ -1847,7 +1869,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             else{
                 edge2_end_index = (edge2_start_index - 1 + solution.size()) % solution.size();
                 if(solution[edge2_end_index] == edge2_end){
-                    edge2_end_index = true;
+                    edge2_switched = true;
                 }
                 else{
                     continue;
@@ -1893,6 +1915,22 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 }
 
+                /*// For new available node
+                for(int i = 0; i < solution.size(); i++){
+                    int old_cost = 0;
+                    old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
+                    old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    int j = new_node_index;
+                    int cost_improvement = 0;
+                    cost_improvement -= get_cost(solution[(i-1 + solution.size()) % solution.size()], available_nodes[j], dataset, distance_matrix);
+                    cost_improvement -= get_cost(available_nodes[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                    cost_improvement += old_cost;
+                    if(cost_improvement > 0){
+                        std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
+                        improvement_list.push(move);
+                    }
+                }*/
+
                 // Edges
                 std::vector <int> considered_edge_indexes{prev_node_index, old_node_index};
                 for(int i = 0; i < solution.size(); i++){
@@ -1918,6 +1956,31 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                         }
                     }
                 }
+
+                /*// Reversed edges
+                for(int i = 0; i < solution.size(); i++){
+                    for(int k = 0; k < considered_edge_indexes.size(); k++){
+                        int j = considered_edge_indexes[k];
+                        if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[j]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                            improvement_list.push(move);
+                        }
+                    }
+                }*/
             }
             else{
                 if(!edge1_switched && !edge2_switched){ // normal placement
@@ -1986,6 +2049,31 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                         }
                     }
                 }
+
+                /*// Reversed edges
+                for(int i = 0; i < solution.size(); i++){
+                    for(int k = 0; k < considered_edge_indexes.size(); k++){
+                        int j = considered_edge_indexes[k];
+                        if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
+                        int old_cost = 0;
+                        int cost_improvement = 0;
+
+                        old_cost += get_cost(solution[i], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        old_cost += get_cost(solution[(j+1) % solution.size()], solution[j], dataset, distance_matrix);
+                        old_cost += dataset[solution[i]][2];
+
+                        cost_improvement -= get_cost(solution[j], solution[(i+1) % solution.size()], dataset, distance_matrix);
+                        cost_improvement -= get_cost(solution[(j+1) % solution.size()], solution[i], dataset, distance_matrix);
+                        cost_improvement -= dataset[solution[j]][2];
+
+                        cost_improvement += old_cost;
+
+                        if(cost_improvement > 0){
+                            std::vector <int> move{cost_improvement, 1, solution[i], solution[(i+1) % solution.size()], solution[(j+1) % solution.size()], solution[j]};
+                            improvement_list.push(move);
+                        }
+                    }
+                }*/
             }
         }
     }
@@ -2097,6 +2185,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         
         for(int i = 1; i < iterations; i++){
+            //std::cout << i << "\n";
             
             std::vector <int> solution;
             int cost;
@@ -2203,9 +2292,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    //dataset_paths.push_back("Data/TSPB.csv");
-    //dataset_paths.push_back("Data/TSPC.csv");
-    //dataset_paths.push_back("Data/TSPD.csv");
+    dataset_paths.push_back("Data/TSPB.csv");
+    dataset_paths.push_back("Data/TSPC.csv");
+    dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
