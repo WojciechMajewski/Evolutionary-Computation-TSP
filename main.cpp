@@ -1759,7 +1759,6 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     int edge1_start_index, edge1_end_index, edge2_start_index, edge2_end_index;
     bool edge1_switched, edge2_switched;
 
-    std::vector <int> considered_node_indexes;
     std::vector <int> current_move;
     while(!improvement_list.empty()){
         current_move = improvement_list.top();
@@ -1773,34 +1772,35 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         if(current_move[1] == 0){
 
 
-            
-            continue; // TODO: WORKS WITH THIS
-
-
-
             type = 0;
             old_node = current_move[2];
             prev_node = current_move[3];
             next_node = current_move[4];
             new_node = current_move[5];
 
-            old_node_index = solution.begin() - std::find(solution.begin(), solution.end(), old_node);
+
+            auto it = std::find(solution.begin(), solution.end(), old_node); 
+            if(it == solution.end()){ 
+                continue;
+            }
+            
+            old_node_index = it - solution.begin();
+
             prev_node_index = (old_node_index - 1 + solution.size()) % solution.size();
             next_node_index = (old_node_index + 1) % solution.size();
 
-            if(old_node_index + solution.begin() == std::end(solution)){ // old_node_index == solution.size()
-                continue;
-            }
 
             if(!(solution[prev_node_index] == next_node && solution[next_node_index] == prev_node) &&
                 !(solution[prev_node_index] == prev_node && solution[next_node_index] == next_node)){ // If neither normal nor flipped
                 continue;
             }
-
-            new_node_index = available_nodes.begin() - std::find(available_nodes.begin(), available_nodes.end(), new_node);
-            if(new_node_index + available_nodes.begin() == std::end(available_nodes)){
+            
+            it = std::find(available_nodes.begin(), available_nodes.end(), new_node); 
+            if(it == available_nodes.end()){ 
                 continue;
             }
+            
+            new_node_index = it - available_nodes.begin();
 
             applicable = true;
 
@@ -1813,11 +1813,14 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             edge2_start = current_move[4];
             edge2_end = current_move[5];
 
-            edge1_start_index = solution.begin() - std::find(solution.begin(), solution.end(), edge1_start);
-            edge1_end_index = (edge1_start_index + 1) % solution.size();
-            if(edge1_start_index + solution.begin() == std::end(solution)){ // prev_node_index == solution.size()
+
+            auto it = std::find(solution.begin(), solution.end(), edge1_start); 
+            if(it == solution.end()){ 
                 continue;
             }
+            edge1_start_index = it - solution.begin();
+
+            edge1_end_index = (edge1_start_index + 1) % solution.size();
             if(solution[edge1_end_index] == edge1_end){
                 edge1_switched = false;
             }
@@ -1831,11 +1834,13 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 }
             }
 
-            edge2_start_index = solution.begin() - std::find(solution.begin(), solution.end(), edge2_start);
-            edge2_end_index = (edge2_start_index + 1) % solution.size();
-            if(edge2_start_index + solution.begin() == std::end(solution)){ // prev_node_index == solution.size()
+            it = std::find(solution.begin(), solution.end(), edge2_start); 
+            if(it == solution.end()){ 
                 continue;
             }
+            edge2_start_index = it - solution.begin();
+
+            edge2_end_index = (edge2_start_index + 1) % solution.size();
             if(solution[edge2_end_index] == edge2_end){
                 edge2_switched = false;
             }
@@ -1865,14 +1870,12 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             saved_moves.clear();
 
             if(type == 0){
+
                 solution[old_node_index] = new_node;
                 available_nodes[new_node_index] = old_node;
 
                 // Nodes
-                considered_node_indexes.clear();
-                considered_node_indexes.push_back(prev_node_index);
-                considered_node_indexes.push_back(old_node_index);
-                considered_node_indexes.push_back(next_node_index);
+                std::vector <int> considered_node_indexes{prev_node_index, old_node_index, next_node_index};
                 for(int k = 0; k < considered_node_indexes.size(); k++){
                     int i = considered_node_indexes[k];
                     int old_cost = 0;
@@ -1891,12 +1894,10 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 }
 
                 // Edges
-                considered_node_indexes.clear();
-                considered_node_indexes.push_back(prev_node_index);
-                considered_node_indexes.push_back(old_node_index);
+                std::vector <int> considered_edge_indexes{prev_node_index, old_node_index};
                 for(int i = 0; i < solution.size(); i++){
-                    for(int k = 0; k < considered_node_indexes.size(); k++){
-                        int j = considered_node_indexes[k];
+                    for(int k = 0; k < considered_edge_indexes.size(); k++){
+                        int j = considered_edge_indexes[k];
                         if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
                         int old_cost = 0;
                         int cost_improvement = 0;
@@ -1942,11 +1943,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 }
 
                 // Nodes
-                considered_node_indexes.clear();
-                considered_node_indexes.push_back(edge1_start_index);
-                considered_node_indexes.push_back(edge2_start_index);
-                considered_node_indexes.push_back(edge1_end_index);
-                considered_node_indexes.push_back(edge2_end_index);
+                std::vector <int> considered_node_indexes{edge1_start_index, edge2_start_index, edge1_end_index, edge2_end_index};
                 for(int k = 0; k < considered_node_indexes.size(); k++){
                     int i = considered_node_indexes[k];
                     int old_cost = 0;
@@ -1965,12 +1962,10 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 }
 
                 // Edges
-                considered_node_indexes.clear();
-                considered_node_indexes.push_back(edge1_start_index);
-                considered_node_indexes.push_back(edge2_start_index);
+                std::vector <int> considered_edge_indexes{edge1_start_index, edge2_start_index};
                 for(int i = 0; i < solution.size(); i++){
-                    for(int k = 0; k < considered_node_indexes.size(); k++){
-                        int j = considered_node_indexes[k];
+                    for(int k = 0; k < considered_edge_indexes.size(); k++){
+                        int j = considered_edge_indexes[k];
                         if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
                         int old_cost = 0;
                         int cost_improvement = 0;
@@ -2000,7 +1995,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 10;
+    int iterations = 200;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
