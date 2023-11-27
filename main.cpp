@@ -1733,7 +1733,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         }
     }
 
-    /*// Reversed Edges
+    // Reversed Edges
     for(int i = 0; i < solution.size(); i++){
         for(int j = 0; j < i - 1; j++){
             if(abs(i - j) < 2 || abs(i - j) == solution.size() - 1) continue; // catch intersections
@@ -1755,7 +1755,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 improvement_list.push(move);
             }
         }
-    }*/
+    }
 
     // Nodes
     for(int i = 0; i < solution.size(); i++){
@@ -1915,7 +1915,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 }
 
-                /*// For new available node
+                // For new available node
                 for(int i = 0; i < solution.size(); i++){
                     int old_cost = 0;
                     old_cost += get_cost(solution[(i-1 + solution.size()) % solution.size()], solution[i], dataset, distance_matrix);
@@ -1929,7 +1929,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                         std::vector <int> move{cost_improvement, 0, solution[i], solution[(i-1 + solution.size()) % solution.size()], solution[(i+1) % solution.size()], available_nodes[j]};
                         improvement_list.push(move);
                     }
-                }*/
+                }
 
                 // Edges
                 std::vector <int> considered_edge_indexes{prev_node_index, old_node_index};
@@ -1957,7 +1957,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 }
 
-                /*// Reversed edges
+                // Reversed edges
                 for(int i = 0; i < solution.size(); i++){
                     for(int k = 0; k < considered_edge_indexes.size(); k++){
                         int j = considered_edge_indexes[k];
@@ -1980,7 +1980,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                             improvement_list.push(move);
                         }
                     }
-                }*/
+                }
             }
             else{
                 if(!edge1_switched && !edge2_switched){ // normal placement
@@ -2050,7 +2050,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     }
                 }
 
-                /*// Reversed edges
+                // Reversed edges
                 for(int i = 0; i < solution.size(); i++){
                     for(int k = 0; k < considered_edge_indexes.size(); k++){
                         int j = considered_edge_indexes[k];
@@ -2073,7 +2073,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                             improvement_list.push(move);
                         }
                     }
-                }*/
+                }
             }
         }
     }
