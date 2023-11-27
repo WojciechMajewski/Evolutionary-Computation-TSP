@@ -2144,8 +2144,8 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     */
 
     algorithm_names.push_back("Random Baseline");
-    algorithm_names.push_back("Local Delta");
     algorithm_names.push_back("Local Search110");
+    algorithm_names.push_back("Local Delta");
 
     //algorithm_names.push_back("Cand Comp");
     //algorithm_names.push_back("Local Candidate");
@@ -2169,8 +2169,8 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     */
 
     best_paths.push_back(base_solutions[0]);
-    best_paths.push_back(local_delta(base_solutions[0], dataset, distance_matrix));
     best_paths.push_back(local_search(true, true, base_solutions[0], dataset, distance_matrix));
+    best_paths.push_back(local_delta(base_solutions[0], dataset, distance_matrix));
 
     //best_paths.push_back(local_candidate_moves(base_solutions[0], closest_nodes, dataset, distance_matrix));
     
