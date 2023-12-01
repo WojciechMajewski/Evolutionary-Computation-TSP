@@ -1689,6 +1689,9 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     std::vector <int> unavailable_nodes = solution;
     std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
 
+    std::vector <int> node_position;
+    std::vector <bool> node_in_cycle;
+
     //std::cout << "\n\nDELTA \n";
     int index = 0;
     for(int i = 0; i < dataset.size(); i++){
@@ -1698,6 +1701,17 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
         else{
             available_nodes.push_back(i);
         }
+        node_in_cycle.push_back(true);
+        node_position.push_back(-1);
+    }
+
+    for(int i = 0; i < solution.size(); i++){
+        node_in_cycle[solution[i]] = true;
+        node_position[solution[i]] = i;
+    }
+    for(int i = 0; i < available_nodes.size(); i++){
+        node_in_cycle[available_nodes[i]] = false;
+        node_position[available_nodes[i]] = i;
     }
 
     // WRITE ONCE AGAIN, BUT CLEAN
@@ -1801,28 +1815,34 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             new_node = current_move[5];
 
 
-            auto it = std::find(solution.begin(), solution.end(), old_node); 
-            if(it == solution.end()){ 
+            //auto it = std::find(solution.begin(), solution.end(), old_node); 
+            //if(it == solution.end()){ 
+            //    continue;
+            //}
+            
+            //old_node_index = it - solution.begin();
+            
+            if(!node_in_cycle[old_node] || node_in_cycle[new_node]){
                 continue;
             }
-            
-            old_node_index = it - solution.begin();
+
+            old_node_index = node_position[old_node];
 
             prev_node_index = (old_node_index - 1 + solution.size()) % solution.size();
             next_node_index = (old_node_index + 1) % solution.size();
-
 
             if(!(solution[prev_node_index] == next_node && solution[next_node_index] == prev_node) &&
                 !(solution[prev_node_index] == prev_node && solution[next_node_index] == next_node)){ // If neither normal nor flipped
                 continue;
             }
             
-            it = std::find(available_nodes.begin(), available_nodes.end(), new_node); 
-            if(it == available_nodes.end()){ 
-                continue;
-            }
+            //it = std::find(available_nodes.begin(), available_nodes.end(), new_node); 
+            //if(it == available_nodes.end()){ 
+            //    continue;
+            //}
             
-            new_node_index = it - available_nodes.begin();
+            //new_node_index = it - available_nodes.begin();
+            new_node_index = node_position[new_node];
 
             applicable = true;
 
@@ -1836,11 +1856,16 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             edge2_end = current_move[5];
 
 
-            auto it = std::find(solution.begin(), solution.end(), edge1_start); 
-            if(it == solution.end()){ 
+            //auto it = std::find(solution.begin(), solution.end(), edge1_start); 
+            //if(it == solution.end()){ 
+            //    continue;
+            //}
+            //edge1_start_index = it - solution.begin();
+
+            if(!node_in_cycle[edge1_start] || !node_in_cycle[edge2_start]){
                 continue;
             }
-            edge1_start_index = it - solution.begin();
+            edge1_start_index = node_position[edge1_start];
 
             edge1_end_index = (edge1_start_index + 1) % solution.size();
             if(solution[edge1_end_index] == edge1_end){
@@ -1856,11 +1881,12 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                 }
             }
 
-            it = std::find(solution.begin(), solution.end(), edge2_start); 
-            if(it == solution.end()){ 
-                continue;
-            }
-            edge2_start_index = it - solution.begin();
+            //it = std::find(solution.begin(), solution.end(), edge2_start); 
+            //if(it == solution.end()){ 
+            //    continue;
+            //}
+            //edge2_start_index = it - solution.begin();
+            edge2_start_index = node_position[edge2_start];
 
             edge2_end_index = (edge2_start_index + 1) % solution.size();
             if(solution[edge2_end_index] == edge2_end){
@@ -1895,6 +1921,11 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 
                 solution[old_node_index] = new_node;
                 available_nodes[new_node_index] = old_node;
+
+                node_in_cycle[old_node] = false;
+                node_in_cycle[new_node] = true;
+                node_position[old_node] = new_node_index;
+                node_position[new_node] = old_node_index;
 
                 // Nodes
                 std::vector <int> considered_node_indexes{prev_node_index, old_node_index, next_node_index};
@@ -1985,6 +2016,9 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
             else{
                 if(!edge1_switched && !edge2_switched){ // normal placement
                     int rev1 = std::min(edge1_end_index, edge2_end_index), rev2 = std::max(edge1_end_index, edge2_end_index);
+                    for(int k = rev1; k < rev2; k++){
+                        node_position[solution[k]] = rev1 + (rev2 - 1 - node_position[solution[k]]);
+                    }
                     std::reverse(solution.begin() + rev1, solution.begin() + rev2);
 
                 }
@@ -1998,8 +2032,10 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
                     edge2_start_index = edge2_end_index;
                     edge2_end_index = temp;
                     int rev1 = std::min(edge1_end_index, edge2_end_index), rev2 = std::max(edge1_end_index, edge2_end_index);
+                    for(int k = rev1; k < rev2; k++){
+                        node_position[solution[k]] = rev1 + (rev2 - 1 - node_position[solution[k]]);
+                    }
                     std::reverse(solution.begin() + rev1, solution.begin() + rev2);
-
                 }
                 else {
                     continue;
