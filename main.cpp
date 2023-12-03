@@ -2244,6 +2244,8 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
     auto max_MSLS = *(std::max_element(costs_MSLS.begin(), costs_MSLS.end()));
     auto const count = static_cast<float>(costs_MSLS.size());
     auto avg_MSLS =  std::reduce(costs_MSLS.begin(), costs_MSLS.end()) / count;
+
+    int best_path_index_MSLS = std::find(costs_MSLS.begin(), costs_MSLS.end(), min_MSLS) - costs_MSLS.begin();
     
     if(filename != ""){
         std::ofstream ofs;
@@ -2251,10 +2253,10 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
         ofs << "\nDATASET " << dataset_name << "\n";
         ofs << "\n" << "MSLS" << "\n";
         ofs << "Best, Average, Worst scores:\n" << min_MSLS << " " << avg_MSLS << " " << max_MSLS << "\n";
-        //for(int k = 0; k < best_paths[j].size() - 1; k++){
-        //    ofs << best_paths[j][k] << ", ";
-        //}
-        //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
+        for(int k = 0; k < solutions_MSLS[best_path_index_MSLS].size() - 1; k++){
+            ofs << solutions_MSLS[best_path_index_MSLS][k] << ", ";
+        }
+        ofs << solutions_MSLS[best_path_index_MSLS][solutions_MSLS[best_path_index_MSLS].size() - 1] << "\n";
         ofs << "Time: " << time_MSLS << "ms\n";
     }
 
@@ -2285,16 +2287,18 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
         auto max_ILS = *(std::max_element(costs_ILS.begin(), costs_ILS.end()));
         auto avg_ILS =  std::reduce(costs_ILS.begin(), costs_ILS.end()) / count;
 
+        int best_path_index_ILS = std::find(costs_ILS.begin(), costs_ILS.end(), min_ILS) - costs_ILS.begin();
+
         if(filename != ""){
             std::ofstream ofs;
             ofs.open(filename, std::ios_base::app);
 
             ofs << "\nILS " << max_changes << "\n";
             ofs << "Best, Average, Worst scores:\n" << min_ILS << " " << avg_ILS << " " << max_ILS << "\n";
-            //for(int k = 0; k < best_paths[j].size() - 1; k++){
-            //    ofs << best_paths[j][k] << ", ";
-            //}
-            //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
+            for(int k = 0; k < solutions_ILS[best_path_index_ILS].size() - 1; k++){
+                ofs << solutions_ILS[best_path_index_ILS][k] << ", ";
+            }
+            ofs << solutions_ILS[best_path_index_ILS][solutions_ILS[best_path_index_ILS].size() - 1] << "\n";
             ofs << "Time: " << time_ILS << "ms\n";
             ofs << "Number of runs per search: " << number_of_runs / iterations << "\n";
             
