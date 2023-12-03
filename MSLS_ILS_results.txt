@@ -4,45 +4,49 @@ DATASET A
 MSLS
 Best, Average, Worst scores:
 74665 75201.1 75522
-Time: 272146ms
+Time: 273393ms
 
 ILS 10
 Best, Average, Worst scores:
-72855 73066.5 73632
-Time: 272231ms
+72886 73063 73303
+Time: 273441ms
+Number of runs per search: 1969
 
 DATASET B
 
 MSLS
 Best, Average, Worst scores:
-67969 68335.5 68798
-Time: 269571ms
+67792 68349.7 68816
+Time: 278043ms
 
 ILS 10
 Best, Average, Worst scores:
-66117 66282.4 66698
-Time: 269608ms
+66117 66297.8 66649
+Time: 278116ms
+Number of runs per search: 1927
 
 DATASET C
 
 MSLS
 Best, Average, Worst scores:
-48568 49193.5 49575
-Time: 260440ms
+48488 49161.4 49724
+Time: 272037ms
 
 ILS 10
 Best, Average, Worst scores:
-46775 47051.1 47348
-Time: 260513ms
+46788 47143.8 47561
+Time: 272100ms
+Number of runs per search: 1908
 
 DATASET D
 
 MSLS
 Best, Average, Worst scores:
-44907 45579.9 45976
-Time: 264648ms
+44905 45546.8 46240
+Time: 270327ms
 
 ILS 10
 Best, Average, Worst scores:
-43080 43480.9 44302
-Time: 264710ms
+43169 43381.6 43823
+Time: 270413ms
+Number of runs per search: 1863

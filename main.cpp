@@ -2138,7 +2138,7 @@ std::vector <int> multiple_start_LS(std::vector <std::vector <int>> & dataset, s
     return saved_solution;
 }
 
-std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+std::vector <int> iterated_LS(int stopping_time, int max_changes, int & number_of_runs, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
     std::vector <int> best_solution = random_solution(dataset, distance_matrix);
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
@@ -2146,6 +2146,7 @@ std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <s
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     int elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
     while(elapsed_time < stopping_time){
+        number_of_runs++;
         
         // Perturbate solution 
         std::vector <int> solution = best_solution;
@@ -2267,9 +2268,10 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
 
         std::chrono::steady_clock::time_point ILS_begin = std::chrono::steady_clock::now();
 
+        int number_of_runs = 0;
         for(int i = 0; i < iterations; i++){
             //std::cout << j << " " << i << "\n";
-            solutions_ILS.push_back(iterated_LS(stopping_time, max_changes, dataset, distance_matrix)); 
+            solutions_ILS.push_back(iterated_LS(stopping_time, max_changes, number_of_runs, dataset, distance_matrix)); 
         }
 
         std::chrono::steady_clock::time_point ILS_end = std::chrono::steady_clock::now();
@@ -2294,6 +2296,7 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
             //}
             //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
             ofs << "Time: " << time_ILS << "ms\n";
+            ofs << "Number of runs per search: " << number_of_runs / iterations << "\n";
             
             ofs.close();
         }
