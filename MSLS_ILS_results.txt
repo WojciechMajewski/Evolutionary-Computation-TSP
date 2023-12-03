@@ -4,41 +4,145 @@ DATASET A
 MSLS
 Best, Average, Worst scores:
 74875 75541.6 75990
-Time: 6850ms
-ILS
+Time: 6807ms
+
+ILS 5
 Best, Average, Worst scores:
-75624 77149.4 77822
-Time: 6992ms
+73569 74130.2 74608
+Time: 6812ms
+
+ILS 10
+Best, Average, Worst scores:
+73450 74074.6 74590
+Time: 6825ms
+
+ILS 15
+Best, Average, Worst scores:
+73287 73595 74087
+Time: 6841ms
+
+ILS 20
+Best, Average, Worst scores:
+73496 74013.6 74648
+Time: 6851ms
+
+ILS 25
+Best, Average, Worst scores:
+73978 74333.4 74791
+Time: 6866ms
+
+ILS 30
+Best, Average, Worst scores:
+74068 74317.2 74683
+Time: 6869ms
 
 DATASET B
 
 MSLS
 Best, Average, Worst scores:
-68686 69175.8 69446
-Time: 6959ms
-ILS
+68990 69240.2 69406
+Time: 6965ms
+
+ILS 5
 Best, Average, Worst scores:
-68444 69303.2 70267
-Time: 7027ms
+66954 67235.4 67684
+Time: 6979ms
+
+ILS 10
+Best, Average, Worst scores:
+66518 66979.8 67429
+Time: 6984ms
+
+ILS 15
+Best, Average, Worst scores:
+66516 66837.8 67094
+Time: 6999ms
+
+ILS 20
+Best, Average, Worst scores:
+66890 67077.2 67273
+Time: 7041ms
+
+ILS 25
+Best, Average, Worst scores:
+66788 67053 67556
+Time: 7022ms
+
+ILS 30
+Best, Average, Worst scores:
+66785 67283.4 67862
+Time: 7052ms
 
 DATASET C
 
 MSLS
 Best, Average, Worst scores:
-49537 49772 50047
-Time: 6674ms
-ILS
+49330 49786 50150
+Time: 6699ms
+
+ILS 5
 Best, Average, Worst scores:
-49103 49768 50213
-Time: 6803ms
+47771 48186.6 49323
+Time: 6709ms
+
+ILS 10
+Best, Average, Worst scores:
+47523 47792.8 47995
+Time: 6718ms
+
+ILS 15
+Best, Average, Worst scores:
+47105 47547.6 47773
+Time: 6717ms
+
+ILS 20
+Best, Average, Worst scores:
+47693 48013.4 48268
+Time: 6723ms
+
+ILS 25
+Best, Average, Worst scores:
+47876 48117.6 48319
+Time: 6752ms
+
+ILS 30
+Best, Average, Worst scores:
+48028 48284.4 48535
+Time: 6768ms
 
 DATASET D
 
 MSLS
 Best, Average, Worst scores:
-45620 46293.6 47040
-Time: 6837ms
-ILS
+45568 46435.6 46881
+Time: 6839ms
+
+ILS 5
 Best, Average, Worst scores:
-45418 46617.4 48352
-Time: 6995ms
+44057 44385.6 44841
+Time: 6845ms
+
+ILS 10
+Best, Average, Worst scores:
+43302 43713.8 44350
+Time: 6855ms
+
+ILS 15
+Best, Average, Worst scores:
+43860 44241.8 44619
+Time: 6856ms
+
+ILS 20
+Best, Average, Worst scores:
+43575 44276 44779
+Time: 6882ms
+
+ILS 25
+Best, Average, Worst scores:
+44091 44385.4 44890
+Time: 6925ms
+
+ILS 30
+Best, Average, Worst scores:
+44562 44925.8 45313
+Time: 6906ms

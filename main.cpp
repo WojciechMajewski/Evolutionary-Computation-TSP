@@ -2138,28 +2138,23 @@ std::vector <int> multiple_start_LS(std::vector <std::vector <int>> & dataset, s
     return saved_solution;
 }
 
-std::vector <int> iterated_LS(int stopping_time, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
     std::vector <int> best_solution = random_solution(dataset, distance_matrix);
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    while(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() < stopping_time){
+    int elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    while(elapsed_time < stopping_time){
         
         // Perturbate solution 
         std::vector <int> solution = best_solution;
 
-        // Funny way
-        std::sort(solution.begin(), solution.end());
 
-
-        // Correct-er way
-        /*
+        // Create available nodes
         std::vector <int> available_nodes;
         std::vector <int> unavailable_nodes = solution;
         std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
-
-        //std::cout << "\n\nDELTA \n";
         int index = 0;
         for(int i = 0; i < dataset.size(); i++){
             if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
@@ -2168,7 +2163,42 @@ std::vector <int> iterated_LS(int stopping_time, std::vector <std::vector <int>>
             else{
                 available_nodes.push_back(i);
             }
-        }*/
+        }
+
+
+        // Do changes
+        float ratio = elapsed_time / stopping_time;
+        //int change_count = std::round(ratio * max_changes); // Ceil?
+        int change_count = max_changes;
+        for(int i = 0; i < change_count; i++){
+            if(i % 2){
+                // Node exchange
+                int old_node = rand() % solution.size();
+                int new_node = rand() % available_nodes.size();
+
+                int temp = solution[old_node];
+                solution[old_node] = available_nodes[new_node];
+                available_nodes[new_node] = temp;
+                  
+            }
+            else{
+                // Edge exchange
+                int node1 = rand() % solution.size();
+                int node2 = rand() % solution.size();
+                while(node2 == node1){
+                    node2 = rand() % solution.size();
+                }
+
+                if(((node1 + 1) % solution.size()) > ((node2 + 1) % solution.size())){
+                    int temp = node1;
+                    node1 = node2;
+                    node2 = temp;
+                }
+                // Edge exchange through flipping a subpath
+                std::reverse(solution.begin() + ((node1 + 1) % solution.size()), solution.begin() + ((node2 + 1) % solution.size()));
+                
+            }
+        }
 
 
         // Perform local search
@@ -2183,6 +2213,7 @@ std::vector <int> iterated_LS(int stopping_time, std::vector <std::vector <int>>
 
         // Update time
         end = std::chrono::steady_clock::now();
+        elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
     }
 
     return best_solution;
@@ -2204,40 +2235,16 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
     std::chrono::steady_clock::time_point MSLS_end = std::chrono::steady_clock::now();
 
     int time_MSLS = std::chrono::duration_cast<std::chrono::milliseconds>(MSLS_end - MSLS_begin).count();
-    int stopping_time = time_MSLS / iterations;
-
-    
-
-    std::vector <std::vector <int>> solutions_ILS;
-    std::vector <int> costs_ILS;
-
-    std::chrono::steady_clock::time_point ILS_begin = std::chrono::steady_clock::now();
-
-    for(int i = 0; i < iterations; i++){
-        solutions_ILS.push_back(iterated_LS(stopping_time, dataset, distance_matrix)); 
-    }
-
-    std::chrono::steady_clock::time_point ILS_end = std::chrono::steady_clock::now();
-    int time_ILS = std::chrono::duration_cast<std::chrono::milliseconds>(ILS_end - ILS_begin).count();
 
     for(int i = 0; i < solutions_MSLS.size(); i++){
         costs_MSLS.push_back(get_path_cost(solutions_MSLS[i], dataset, distance_matrix));
     }
 
-    for(int i = 0; i < solutions_ILS.size(); i++){
-        costs_ILS.push_back(get_path_cost(solutions_ILS[i], dataset, distance_matrix));
-    }
-
     auto min_MSLS = *(std::min_element(costs_MSLS.begin(), costs_MSLS.end()));
     auto max_MSLS = *(std::max_element(costs_MSLS.begin(), costs_MSLS.end()));
-    auto min_ILS = *(std::min_element(costs_ILS.begin(), costs_ILS.end()));
-    auto max_ILS = *(std::max_element(costs_ILS.begin(), costs_ILS.end()));
     auto const count = static_cast<float>(costs_MSLS.size());
     auto avg_MSLS =  std::reduce(costs_MSLS.begin(), costs_MSLS.end()) / count;
-    auto avg_ILS =  std::reduce(costs_ILS.begin(), costs_ILS.end()) / count;
-
-
-
+    
     if(filename != ""){
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
@@ -2249,17 +2256,48 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
         //}
         //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
         ofs << "Time: " << time_MSLS << "ms\n";
+    }
 
+    // Experimental ILS
 
-        ofs << "ILS" << "\n";
-        ofs << "Best, Average, Worst scores:\n" << min_ILS << " " << avg_ILS << " " << max_ILS << "\n";
-        //for(int k = 0; k < best_paths[j].size() - 1; k++){
-        //    ofs << best_paths[j][k] << ", ";
-        //}
-        //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
-        ofs << "Time: " << time_ILS << "ms\n";
-        
-        ofs.close();
+    int stopping_time = time_MSLS / iterations;
+    for(int j = 1; j < 7; j++){ // 15 Flat is best
+        int max_changes = j * 5;
+        std::vector <std::vector <int>> solutions_ILS;
+        std::vector <int> costs_ILS;
+
+        std::chrono::steady_clock::time_point ILS_begin = std::chrono::steady_clock::now();
+
+        for(int i = 0; i < iterations; i++){
+            std::cout << j << " " << i << "\n";
+            solutions_ILS.push_back(iterated_LS(stopping_time, max_changes, dataset, distance_matrix)); 
+        }
+
+        std::chrono::steady_clock::time_point ILS_end = std::chrono::steady_clock::now();
+        int time_ILS = std::chrono::duration_cast<std::chrono::milliseconds>(ILS_end - ILS_begin).count();
+
+        for(int i = 0; i < solutions_ILS.size(); i++){
+            costs_ILS.push_back(get_path_cost(solutions_ILS[i], dataset, distance_matrix));
+        }
+
+        auto min_ILS = *(std::min_element(costs_ILS.begin(), costs_ILS.end()));
+        auto max_ILS = *(std::max_element(costs_ILS.begin(), costs_ILS.end()));
+        auto avg_ILS =  std::reduce(costs_ILS.begin(), costs_ILS.end()) / count;
+
+        if(filename != ""){
+            std::ofstream ofs;
+            ofs.open(filename, std::ios_base::app);
+
+            ofs << "\nILS " << max_changes << "\n";
+            ofs << "Best, Average, Worst scores:\n" << min_ILS << " " << avg_ILS << " " << max_ILS << "\n";
+            //for(int k = 0; k < best_paths[j].size() - 1; k++){
+            //    ofs << best_paths[j][k] << ", ";
+            //}
+            //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
+            ofs << "Time: " << time_ILS << "ms\n";
+            
+            ofs.close();
+        }
     }
 
 
