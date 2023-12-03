@@ -1,0 +1,44 @@
+
+DATASET A
+
+MSLS
+Best, Average, Worst scores:
+74875 75541.6 75990
+Time: 6850ms
+ILS
+Best, Average, Worst scores:
+75624 77149.4 77822
+Time: 6992ms
+
+DATASET B
+
+MSLS
+Best, Average, Worst scores:
+68686 69175.8 69446
+Time: 6959ms
+ILS
+Best, Average, Worst scores:
+68444 69303.2 70267
+Time: 7027ms
+
+DATASET C
+
+MSLS
+Best, Average, Worst scores:
+49537 49772 50047
+Time: 6674ms
+ILS
+Best, Average, Worst scores:
+49103 49768 50213
+Time: 6803ms
+
+DATASET D
+
+MSLS
+Best, Average, Worst scores:
+45620 46293.6 47040
+Time: 6837ms
+ILS
+Best, Average, Worst scores:
+45418 46617.4 48352
+Time: 6995ms

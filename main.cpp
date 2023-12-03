@@ -8,6 +8,7 @@
 #include <chrono>
 #include <algorithm>
 #include <queue>
+#include <numeric>
 
 std::vector <std::vector <int>> read_dataset(std::string path) {
     std::ifstream file(path);
@@ -2117,9 +2118,156 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
     return solution;
 }
 
+std::vector <int> multiple_start_LS(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    int iterations = 20; // 200
+
+    std::vector <int> saved_solution = local_search(true, true, random_solution(dataset, distance_matrix), dataset, distance_matrix);
+    int saved_cost = get_path_cost(saved_solution, dataset, distance_matrix);
+
+    for(int i = 1; i < iterations; i++){
+        std::vector <int> solution = random_solution(dataset, distance_matrix);
+        solution = local_search(true, true, solution, dataset, distance_matrix);
+        int new_cost = get_path_cost(solution, dataset, distance_matrix);
+        if(new_cost < saved_cost){
+            saved_cost = new_cost;
+            saved_solution = solution;
+        }
+                
+    }
+
+    return saved_solution;
+}
+
+std::vector <int> iterated_LS(int stopping_time, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> best_solution = random_solution(dataset, distance_matrix);
+    int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    while(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() < stopping_time){
+        
+        // Perturbate solution 
+        std::vector <int> solution = best_solution;
+
+        // Funny way
+        std::sort(solution.begin(), solution.end());
+
+
+        // Correct-er way
+        /*
+        std::vector <int> available_nodes;
+        std::vector <int> unavailable_nodes = solution;
+        std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+        //std::cout << "\n\nDELTA \n";
+        int index = 0;
+        for(int i = 0; i < dataset.size(); i++){
+            if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+                index++;
+            }
+            else{
+                available_nodes.push_back(i);
+            }
+        }*/
+
+
+        // Perform local search
+        solution = local_search(true, true, solution, dataset, distance_matrix);
+
+        // Compare
+        int cost = get_path_cost(solution, dataset, distance_matrix);
+        if(cost < best_cost){
+            best_cost = cost;
+            best_solution = solution;
+        }
+
+        // Update time
+        end = std::chrono::steady_clock::now();
+    }
+
+    return best_solution;
+}
+
+void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
+    int iterations = 5; // 20
+
+    std::vector <std::vector <int>> solutions_MSLS;
+    std::vector <int> costs_MSLS;
+
+    std::chrono::steady_clock::time_point MSLS_begin = std::chrono::steady_clock::now();
+
+    for(int i = 0; i < iterations; i++){
+        std::cout << i << "\n";
+        solutions_MSLS.push_back(multiple_start_LS(dataset, distance_matrix)); 
+    }
+
+    std::chrono::steady_clock::time_point MSLS_end = std::chrono::steady_clock::now();
+
+    int time_MSLS = std::chrono::duration_cast<std::chrono::milliseconds>(MSLS_end - MSLS_begin).count();
+    int stopping_time = time_MSLS / iterations;
+
+    
+
+    std::vector <std::vector <int>> solutions_ILS;
+    std::vector <int> costs_ILS;
+
+    std::chrono::steady_clock::time_point ILS_begin = std::chrono::steady_clock::now();
+
+    for(int i = 0; i < iterations; i++){
+        solutions_ILS.push_back(iterated_LS(stopping_time, dataset, distance_matrix)); 
+    }
+
+    std::chrono::steady_clock::time_point ILS_end = std::chrono::steady_clock::now();
+    int time_ILS = std::chrono::duration_cast<std::chrono::milliseconds>(ILS_end - ILS_begin).count();
+
+    for(int i = 0; i < solutions_MSLS.size(); i++){
+        costs_MSLS.push_back(get_path_cost(solutions_MSLS[i], dataset, distance_matrix));
+    }
+
+    for(int i = 0; i < solutions_ILS.size(); i++){
+        costs_ILS.push_back(get_path_cost(solutions_ILS[i], dataset, distance_matrix));
+    }
+
+    auto min_MSLS = *(std::min_element(costs_MSLS.begin(), costs_MSLS.end()));
+    auto max_MSLS = *(std::max_element(costs_MSLS.begin(), costs_MSLS.end()));
+    auto min_ILS = *(std::min_element(costs_ILS.begin(), costs_ILS.end()));
+    auto max_ILS = *(std::max_element(costs_ILS.begin(), costs_ILS.end()));
+    auto const count = static_cast<float>(costs_MSLS.size());
+    auto avg_MSLS =  std::reduce(costs_MSLS.begin(), costs_MSLS.end()) / count;
+    auto avg_ILS =  std::reduce(costs_ILS.begin(), costs_ILS.end()) / count;
+
+
+
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+        ofs << "\nDATASET " << dataset_name << "\n";
+        ofs << "\n" << "MSLS" << "\n";
+        ofs << "Best, Average, Worst scores:\n" << min_MSLS << " " << avg_MSLS << " " << max_MSLS << "\n";
+        //for(int k = 0; k < best_paths[j].size() - 1; k++){
+        //    ofs << best_paths[j][k] << ", ";
+        //}
+        //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
+        ofs << "Time: " << time_MSLS << "ms\n";
+
+
+        ofs << "ILS" << "\n";
+        ofs << "Best, Average, Worst scores:\n" << min_ILS << " " << avg_ILS << " " << max_ILS << "\n";
+        //for(int k = 0; k < best_paths[j].size() - 1; k++){
+        //    ofs << best_paths[j][k] << ", ";
+        //}
+        //ofs << best_paths[j][best_paths[j].size() - 1] << "\n";
+        ofs << "Time: " << time_ILS << "ms\n";
+        
+        ofs.close();
+    }
+
+
+}
+
 
 void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 200;
+    int iterations = 20;
     std::vector <std::vector <int>> best_paths;
     std::vector <int> best_scores;
     std::vector <int> worst_scores;
@@ -2317,7 +2465,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "deltas_results.txt";
+    std::string filename = "MSLS_ILS_results.txt";
 
 
     if(filename != ""){
@@ -2341,7 +2489,8 @@ int main(){
 
         std::string dataset_name;
         dataset_name += (char(65 + i));
-        calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
+        //calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
+        compare_MSLS_ILS(dataset, distance_matrix, filename, dataset_name);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
