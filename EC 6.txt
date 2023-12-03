@@ -1,0 +1,22 @@
+ILS 10 (Adaptive to time)
+Best, Average, Worst scores:
+73070 73517.8 73922
+Time: 6914ms
+
+ILS 15 (More edge exchanges)
+Best, Average, Worst scores:
+73199 73612.8 74170
+Time: 6918ms
+
+ILS 15 (More node exchanges)
+Best, Average, Worst scores:
+73490 73735.2 73963
+Time: 6953ms
+
+ILS 15 (Flat max_changes value)
+Best, Average, Worst scores:
+73387 73586.6 73770
+Time: 7010ms
+
+
+runs of 5x20 not 20x200

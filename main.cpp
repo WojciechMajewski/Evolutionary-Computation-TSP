@@ -2119,7 +2119,7 @@ std::vector <int> local_delta(std::vector <int> solution, std::vector <std::vect
 }
 
 std::vector <int> multiple_start_LS(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
-    int iterations = 20; // 200
+    int iterations = 200; // 200
 
     std::vector <int> saved_solution = local_search(true, true, random_solution(dataset, distance_matrix), dataset, distance_matrix);
     int saved_cost = get_path_cost(saved_solution, dataset, distance_matrix);
@@ -2167,9 +2167,9 @@ std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <s
 
 
         // Do changes
-        float ratio = elapsed_time / stopping_time;
-        //int change_count = std::round(ratio * max_changes); // Ceil?
-        int change_count = max_changes;
+        float ratio = 1 - (elapsed_time / stopping_time);
+        int change_count = std::round(ratio * max_changes); // Ceil?
+        //int change_count = max_changes;
         for(int i = 0; i < change_count; i++){
             if(i % 2){
                 // Node exchange
@@ -2179,7 +2179,6 @@ std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <s
                 int temp = solution[old_node];
                 solution[old_node] = available_nodes[new_node];
                 available_nodes[new_node] = temp;
-                  
             }
             else{
                 // Edge exchange
@@ -2220,7 +2219,7 @@ std::vector <int> iterated_LS(int stopping_time, int max_changes, std::vector <s
 }
 
 void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 5; // 20
+    int iterations = 20; // 20
 
     std::vector <std::vector <int>> solutions_MSLS;
     std::vector <int> costs_MSLS;
@@ -2228,7 +2227,7 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
     std::chrono::steady_clock::time_point MSLS_begin = std::chrono::steady_clock::now();
 
     for(int i = 0; i < iterations; i++){
-        std::cout << i << "\n";
+        //std::cout << i << "\n";
         solutions_MSLS.push_back(multiple_start_LS(dataset, distance_matrix)); 
     }
 
@@ -2261,15 +2260,15 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
     // Experimental ILS
 
     int stopping_time = time_MSLS / iterations;
-    for(int j = 1; j < 7; j++){ // 15 Flat is best
-        int max_changes = j * 5;
+    for(int j = 1; j < 2; j++){ // 15 Flat is best
+        int max_changes = 10; //j * 5;
         std::vector <std::vector <int>> solutions_ILS;
         std::vector <int> costs_ILS;
 
         std::chrono::steady_clock::time_point ILS_begin = std::chrono::steady_clock::now();
 
         for(int i = 0; i < iterations; i++){
-            std::cout << j << " " << i << "\n";
+            //std::cout << j << " " << i << "\n";
             solutions_ILS.push_back(iterated_LS(stopping_time, max_changes, dataset, distance_matrix)); 
         }
 
