@@ -2311,11 +2311,82 @@ void compare_MSLS_ILS(std::vector <std::vector <int>> & dataset, std::vector <st
     }
 }
 
+std::vector <int> greedy_weighted_partial(std::vector <int> starting_solution, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> available_nodes;
+    std::vector <int> unavailable_nodes = starting_solution;
+    std::sort(unavailable_nodes.begin(), unavailable_nodes.end());
+
+    int index = 0;
+    for(int i = 0; i < dataset.size(); i++){
+        if(index < unavailable_nodes.size() && unavailable_nodes[index] == i){
+            index++;
+        }
+        else{
+            available_nodes.push_back(i);
+        }
+    }
+
+    int path_target_length = std::floor(dataset.size() / 2);
+
+    if(starting_solution.size() < 3){
+        std::cout << "ERROR: Invalid starting path length\n";
+        return starting_solution;
+    }
+
+    std::vector <int> solution = starting_solution;
+
+    for(int i = solution.size(); i < path_target_length; i++){
+        int highest_regret = -1000000;
+        int chosen_available_index = -1;
+        int chosen_solution_index = -1;
+
+        for(int j = 0; j < available_nodes.size(); j++){
+            int best_location_for_this_node = -1;
+            std::vector <int> top_2_scores;
+            top_2_scores.push_back(1000000);
+            top_2_scores.push_back(1000000);
+
+            for(int k = 0; k < solution.size(); k++){
+                int extra_distance = get_cost(solution[k], available_nodes[j], dataset, distance_matrix) + \
+                                    get_cost(available_nodes[j], solution[(k+1) % solution.size()], dataset, distance_matrix) - \
+                                    get_cost(solution[k], solution[(k+1) % solution.size()], dataset, distance_matrix);
+
+                for(int m = 0; m < 2; m++){
+                    if(extra_distance < top_2_scores[m]){
+                        top_2_scores.insert(top_2_scores.begin() + m, extra_distance);
+                        top_2_scores.pop_back();
+                        if(m == 0){
+                            best_location_for_this_node = k+1;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            int regret_2 = top_2_scores[1] - top_2_scores[0];
+            // The only change from 2-regret:
+            regret_2 -= top_2_scores[0];
+
+            if(regret_2 > highest_regret){
+                highest_regret = regret_2;
+                chosen_available_index = j;
+                chosen_solution_index = best_location_for_this_node;
+            }
+        }
+
+        solution.insert(solution.begin() + chosen_solution_index, available_nodes[chosen_available_index]);
+        available_nodes.erase(available_nodes.begin() + chosen_available_index);
+    }
+
+    return solution;
+}
+
 std::vector <int> large_scale_neighborhood_search(int stopping_time, int & number_of_runs, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
     std::vector <int> best_solution = random_solution(dataset, distance_matrix);
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
 
+    int how_many_to_remove = std::floor(dataset.size() * 0.2);
     // Optional local search
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -2330,12 +2401,55 @@ std::vector <int> large_scale_neighborhood_search(int stopping_time, int & numbe
         // Remove nodes with probability <- node cost
         // For each node create pair start-end with (end = start + node cost) and (start = end of previos node + 1)
         // Generate number from 0 to last node end, and remove the node in which this random number resides
+        std::vector <int> indexes_to_remove;
 
+        std::vector <int> probability_ranges;
+        for(int i = 0; i < solution.size(); i++){
+            std::vector <int> probability_end;
+            if(probability_ranges.empty()){
+                probability_ranges.push_back(0 + dataset[solution[i]][2]);
+            }
+            else{
+                probability_ranges.push_back(probability_ranges[probability_ranges.size()-1] + dataset[solution[i]][2]); // Take node cost as probability
+            }
+        }
+
+        
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist(0,probability_ranges[probability_ranges.size()-1]); // distribution in range [1, 6]
+
+        while(indexes_to_remove.size() < how_many_to_remove){
+            int random_value = dist(rng);
+
+            // Find which node index that is
+            int random_index = std::upper_bound(probability_ranges.begin(), probability_ranges.end(), random_value) - probability_ranges.begin();
+
+            if(indexes_to_remove.empty()){
+                indexes_to_remove.push_back(random_index);
+                continue;
+            }
+
+            auto it = std::find(indexes_to_remove.begin(), indexes_to_remove.end(), random_index);
+            if(it != indexes_to_remove.end()){ 
+                // If it is already on the list to remove, reroll
+                continue;
+            }
+            // Else add to the list to remove
+            indexes_to_remove.push_back(random_index);
+        }
+
+        // Now remove these random nodes
+        while(!indexes_to_remove.empty()){
+            int index = indexes_to_remove[indexes_to_remove.size() - 1];
+            indexes_to_remove.pop_back();
+            solution.erase(solution.begin() + index); // From last to first so correct indexes should be removed
+        }
 
         // Repair solution
         // Greedy heuristic
         // Modified greedy wieghted which takes partial solution instead of only a starting node
-
+        solution = greedy_weighted_partial(solution, dataset, distance_matrix);
 
         // Perform local search (optional)
         // solution = local_search(true, true, solution, dataset, distance_matrix);
@@ -2356,7 +2470,7 @@ std::vector <int> large_scale_neighborhood_search(int stopping_time, int & numbe
 }
 
 void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 2; // 20
+    int iterations = 20; // 20
 
     std::vector <std::vector <int>> solutions_MSLS;
     std::vector <int> costs_MSLS;
