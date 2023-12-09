@@ -2383,6 +2383,9 @@ std::vector <int> greedy_weighted_partial(std::vector <int> starting_solution, s
 
 std::vector <int> large_scale_neighborhood_search(int stopping_time, int & number_of_runs, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
     std::vector <int> best_solution = random_solution(dataset, distance_matrix);
+    // Perform local search (optional)
+    best_solution = local_search(true, true, best_solution, dataset, distance_matrix);
+
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
 
@@ -2452,7 +2455,7 @@ std::vector <int> large_scale_neighborhood_search(int stopping_time, int & numbe
         solution = greedy_weighted_partial(solution, dataset, distance_matrix);
 
         // Perform local search (optional)
-        // solution = local_search(true, true, solution, dataset, distance_matrix);
+        solution = local_search(true, true, solution, dataset, distance_matrix);
 
         // Compare
         int cost = get_path_cost(solution, dataset, distance_matrix);
@@ -2754,7 +2757,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "LSN_results.txt";
+    std::string filename = "LSN_results_LS.txt";
 
 
     if(filename != ""){
