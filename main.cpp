@@ -2560,7 +2560,7 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
 
-        ofs << "\nLSN Random LS" << "\n";
+        ofs << "\nLSN Random no LS" << "\n";
         ofs << "Best, Average, Worst scores:\n" << min_LSN << " " << avg_LSN << " " << max_LSN << "\n";
         for(int k = 0; k < solutions_LSN[best_path_index_LSN].size() - 1; k++){
             ofs << solutions_LSN[best_path_index_LSN][k] << ", ";
@@ -2601,7 +2601,7 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
 
-        ofs << "\nLSN Random no LS" << "\n";
+        ofs << "\nLSN Random LS" << "\n";
         ofs << "Best, Average, Worst scores:\n" << min_LSN << " " << avg_LSN << " " << max_LSN << "\n";
         for(int k = 0; k < solutions_LSN[best_path_index_LSN].size() - 1; k++){
             ofs << solutions_LSN[best_path_index_LSN][k] << ", ";
