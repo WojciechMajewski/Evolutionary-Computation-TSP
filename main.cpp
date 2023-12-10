@@ -2381,10 +2381,22 @@ std::vector <int> greedy_weighted_partial(std::vector <int> starting_solution, s
     return solution;
 }
 
-std::vector <int> large_scale_neighborhood_search(int stopping_time, int & number_of_runs, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
-    std::vector <int> best_solution = random_solution(dataset, distance_matrix);
+std::vector <int> large_scale_neighborhood_search(int stopping_time, bool random, bool perform_local_search, int & number_of_runs, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix){
+    std::vector <int> best_solution;
+    if(random){
+        best_solution = random_solution(dataset, distance_matrix);
+        perform_local_search = true; // Random has to always be used with LS
+    }
+    else{
+        std::vector <int> solution = random_solution(dataset, distance_matrix);
+        best_solution.push_back(solution[0]);
+        best_solution = greedy_weighted_partial(best_solution, dataset, distance_matrix);
+    }
+
     // Perform local search (optional)
-    best_solution = local_search(true, true, best_solution, dataset, distance_matrix);
+    if(perform_local_search){
+        best_solution = local_search(true, true, best_solution, dataset, distance_matrix);
+    }
 
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
@@ -2455,7 +2467,10 @@ std::vector <int> large_scale_neighborhood_search(int stopping_time, int & numbe
         solution = greedy_weighted_partial(solution, dataset, distance_matrix);
 
         // Perform local search (optional)
-        solution = local_search(true, true, solution, dataset, distance_matrix);
+        
+        if(perform_local_search){
+            solution = local_search(true, true, solution, dataset, distance_matrix);
+        }
 
         // Compare
         int cost = get_path_cost(solution, dataset, distance_matrix);
@@ -2513,7 +2528,7 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
         ofs << "Time: " << time_MSLS << "ms\n";
     }
 
-    // Experimental LSN
+    // Experimental LSN with Random starting
 
     int stopping_time = time_MSLS / iterations;
     std::vector <std::vector <int>> solutions_LSN;
@@ -2523,7 +2538,7 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
 
     int number_of_runs = 0;
     for(int i = 0; i < iterations; i++){
-        solutions_LSN.push_back(large_scale_neighborhood_search(stopping_time, number_of_runs, dataset, distance_matrix)); 
+        solutions_LSN.push_back(large_scale_neighborhood_search(stopping_time, true, false, number_of_runs, dataset, distance_matrix)); 
     }
 
     std::chrono::steady_clock::time_point LSN_end = std::chrono::steady_clock::now();
@@ -2543,7 +2558,48 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
 
-        ofs << "\nLSN " << "\n";
+        ofs << "\nLSN no LS" << "\n";
+        ofs << "Best, Average, Worst scores:\n" << min_LSN << " " << avg_LSN << " " << max_LSN << "\n";
+        for(int k = 0; k < solutions_LSN[best_path_index_LSN].size() - 1; k++){
+            ofs << solutions_LSN[best_path_index_LSN][k] << ", ";
+        }
+        ofs << solutions_LSN[best_path_index_LSN][solutions_LSN[best_path_index_LSN].size() - 1] << "\n";
+        ofs << "Time: " << time_LSN << "ms\n";
+        ofs << "Number of runs per search: " << number_of_runs / iterations << "\n";
+        
+        ofs.close();
+    }
+
+    // Experimental LSN with Greedy starting, without Local Search
+
+    solutions_LSN.clear();
+    costs_LSN.clear();
+
+    LSN_begin = std::chrono::steady_clock::now();
+
+    number_of_runs = 0;
+    for(int i = 0; i < iterations; i++){
+        solutions_LSN.push_back(large_scale_neighborhood_search(stopping_time, false, false, number_of_runs, dataset, distance_matrix)); 
+    }
+
+    LSN_end = std::chrono::steady_clock::now();
+    time_LSN = std::chrono::duration_cast<std::chrono::milliseconds>(LSN_end - LSN_begin).count();
+
+    for(int i = 0; i < solutions_LSN.size(); i++){
+        costs_LSN.push_back(get_path_cost(solutions_LSN[i], dataset, distance_matrix));
+    }
+
+    min_LSN = *(std::min_element(costs_LSN.begin(), costs_LSN.end()));
+    max_LSN = *(std::max_element(costs_LSN.begin(), costs_LSN.end()));
+    avg_LSN =  std::reduce(costs_LSN.begin(), costs_LSN.end()) / count;
+
+    best_path_index_LSN = std::find(costs_LSN.begin(), costs_LSN.end(), min_LSN) - costs_LSN.begin();
+
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+
+        ofs << "\nLSN LS" << "\n";
         ofs << "Best, Average, Worst scores:\n" << min_LSN << " " << avg_LSN << " " << max_LSN << "\n";
         for(int k = 0; k < solutions_LSN[best_path_index_LSN].size() - 1; k++){
             ofs << solutions_LSN[best_path_index_LSN][k] << ", ";
@@ -2555,6 +2611,47 @@ void compare_MSLS_LSN(std::vector <std::vector <int>> & dataset, std::vector <st
         ofs.close();
     }
     
+
+    // Experimental LSN with Greedy starting and Local Search
+
+    solutions_LSN.clear();
+    costs_LSN.clear();
+
+    LSN_begin = std::chrono::steady_clock::now();
+
+    number_of_runs = 0;
+    for(int i = 0; i < iterations; i++){
+        solutions_LSN.push_back(large_scale_neighborhood_search(stopping_time, false, true, number_of_runs, dataset, distance_matrix)); 
+    }
+
+    LSN_end = std::chrono::steady_clock::now();
+    time_LSN = std::chrono::duration_cast<std::chrono::milliseconds>(LSN_end - LSN_begin).count();
+
+    for(int i = 0; i < solutions_LSN.size(); i++){
+        costs_LSN.push_back(get_path_cost(solutions_LSN[i], dataset, distance_matrix));
+    }
+
+    min_LSN = *(std::min_element(costs_LSN.begin(), costs_LSN.end()));
+    max_LSN = *(std::max_element(costs_LSN.begin(), costs_LSN.end()));
+    avg_LSN =  std::reduce(costs_LSN.begin(), costs_LSN.end()) / count;
+
+    best_path_index_LSN = std::find(costs_LSN.begin(), costs_LSN.end(), min_LSN) - costs_LSN.begin();
+
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+
+        ofs << "\nLSN LS" << "\n";
+        ofs << "Best, Average, Worst scores:\n" << min_LSN << " " << avg_LSN << " " << max_LSN << "\n";
+        for(int k = 0; k < solutions_LSN[best_path_index_LSN].size() - 1; k++){
+            ofs << solutions_LSN[best_path_index_LSN][k] << ", ";
+        }
+        ofs << solutions_LSN[best_path_index_LSN][solutions_LSN[best_path_index_LSN].size() - 1] << "\n";
+        ofs << "Time: " << time_LSN << "ms\n";
+        ofs << "Number of runs per search: " << number_of_runs / iterations << "\n";
+        
+        ofs.close();
+    }
 }
 
 
@@ -2757,7 +2854,7 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
 int main(){
     std::srand(148253);
 
-    std::string filename = "LSN_results_LS.txt";
+    std::string filename = "LSN_results_optional_LS.txt";
 
 
     if(filename != ""){
