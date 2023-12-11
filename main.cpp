@@ -2403,7 +2403,7 @@ std::vector <int> large_scale_neighborhood_search(int stopping_time, bool random
     int best_cost = get_path_cost(best_solution, dataset, distance_matrix);
 
 
-    int how_many_to_remove = std::floor(dataset.size() * 0.2);
+    int how_many_to_remove = std::floor(dataset.size() * 0.3);
     // Optional local search
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
