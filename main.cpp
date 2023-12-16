@@ -2893,12 +2893,106 @@ void calculate_best_paths(std::vector <std::vector <int>> & dataset, std::vector
     }
 }
 
+void global_convexity(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
+    int iterations = 1000; // 1000
+
+    std::vector <std::vector <int>> solutions;
+
+    std::vector <int> best_solution;
+    int best_length = 10000000;
+
+    std::vector <std::vector <int>> edge_and_node_count; // At [i][i] there is a node count of i; At [i][j] there is edge count i->j
+    std::vector <int> empty_vector;
+    for(int i = 0; i < dataset.size(); i++){
+        empty_vector.push_back(0);
+    }
+    for(int i = 0; i < dataset.size(); i++){
+        edge_and_node_count.push_back(empty_vector);
+    }
+
+    for(int i = 0; i < iterations; i++){
+        std::vector <int> solution = random_solution(dataset, distance_matrix);
+        solution = local_search(false, true, solution, dataset, distance_matrix);
+        solutions.push_back(solution);
+
+        int cost = get_path_cost(solution, dataset, distance_matrix);
+        if(cost < best_length){
+            best_length = cost;
+            best_solution = solution;
+        }
+
+        for(int j = 0; j < solution.size(); j++){
+            int node = solution[j];
+            edge_and_node_count[node][node]++;
+            int next_node = solution[(j+1)%solution.size()];
+            edge_and_node_count[node][next_node]++;
+        }
+    }
+
+    std::vector <std::vector <int>> edge_and_node_count_in_best;
+    for(int i = 0; i < dataset.size(); i++){
+        edge_and_node_count_in_best.push_back(empty_vector);
+    }
+    for(int j = 0; j < best_solution.size(); j++){
+        int node = best_solution[j];
+        edge_and_node_count_in_best[node][node]++;
+        int next_node = best_solution[(j+1)%best_solution.size()];
+        edge_and_node_count_in_best[node][next_node]++;
+    }
+
+    std::vector <float> node_best_sim;
+    std::vector <float> edge_best_sim;
+    std::vector <float> node_avg_sim;
+    std::vector <float> edge_avg_sim;
+    for(int i = 0; i < iterations; i++){
+        std::vector <int> solution = solutions[i];
+        float node_best = 0;
+        float edge_best = 0;
+        float node_avg = 0;
+        float edge_avg = 0;
+
+        for(int j = 0; j < solution.size(); j++){
+            int node = solution[j];
+            int next_node = solution[(j+1)%solution.size()];
+
+            node_best += edge_and_node_count_in_best[node][node]; // 0 or 1
+            edge_best += edge_and_node_count_in_best[node][next_node]; // 0 or 1
+
+            node_avg += (edge_and_node_count[node][node] - 1); // Occurences except its own
+            edge_avg += (edge_and_node_count[node][next_node] - 1); // Occurences except its own
+        }
+
+        node_best = node_best / solution.size();
+        edge_best = edge_best / solution.size();
+
+        node_avg = node_avg / (iterations-1);
+        edge_avg = edge_avg / (iterations-1);
+        node_avg = node_avg / solution.size();
+        edge_avg = edge_avg / solution.size();
+
+        node_best_sim.push_back(node_best);
+        edge_best_sim.push_back(edge_best);
+        node_avg_sim.push_back(node_avg);
+        edge_avg_sim.push_back(edge_avg);
+    }
+
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+        ofs << "\nDATASET " << dataset_name << "\n";
+        ofs << "node_best\tedge_best\tnode_avg\tedge_avg\n";
+        for(int i = 0; i < iterations; i++){
+            ofs << node_best_sim[i] << "\t" << edge_best_sim[i] << "\t" << node_avg_sim[i] << "\t" << edge_avg_sim[i] << "\n";
+        }
+        ofs.close();
+    }
+}
+
 
 int main(){
     std::srand(148253);
 
-    std::string filename = "LSN_results_optional_LS.txt";
-
+    std::string filename = "global_convexity.txt";
 
     if(filename != ""){
         std::ofstream ofs;
@@ -2922,7 +3016,8 @@ int main(){
         std::string dataset_name;
         dataset_name += (char(65 + i));
         //calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
-        compare_MSLS_LSN(dataset, distance_matrix, filename, dataset_name);
+        //compare_MSLS_LSN(dataset, distance_matrix, filename, dataset_name);
+        global_convexity(dataset, distance_matrix, filename, dataset_name);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
