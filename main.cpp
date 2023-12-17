@@ -2980,9 +2980,13 @@ void global_convexity(std::vector <std::vector <int>> & dataset, std::vector <st
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
         ofs << "\nDATASET " << dataset_name << "\n";
-        ofs << "node_best\tedge_best\tnode_avg\tedge_avg\n";
+        ofs << "node_best edge_best node_avg edge_avg\n";
         for(int i = 0; i < iterations; i++){
-            ofs << node_best_sim[i] << "\t" << edge_best_sim[i] << "\t" << node_avg_sim[i] << "\t" << edge_avg_sim[i] << "\n";
+            for(int j = 0; j < solutions[i].size(); j++){
+                ofs << solutions[i][j] << " ";
+            }
+            ofs << "\n" << get_path_cost(solutions[i], dataset, distance_matrix) << "\n";
+            ofs << node_best_sim[i] << " " << edge_best_sim[i] << " " << node_avg_sim[i] << " " << edge_avg_sim[i] << "\n";
         }
         ofs.close();
     }
