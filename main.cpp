@@ -2992,11 +2992,65 @@ void global_convexity(std::vector <std::vector <int>> & dataset, std::vector <st
     }
 }
 
+void run_hybrid(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
+    int iterations = 100; // 1000
+
+    
+    std::vector <std::vector <int>> solutions;
+    std::vector <int> costs;
+
+    int i = 0;
+    while(i < iterations){
+        std::vector <int> solution = random_solution(dataset, distance_matrix);
+        int cost = get_path_cost(solution, dataset, distance_matrix);
+        if(std::find(costs.begin(), costs.end(), cost) != costs.end()) {
+            continue;
+        }
+        solutions.push_back(solution);
+        costs.push_back(cost);
+        i++;
+    }
+    std::cout << solutions.size() << "\n";
+
+    // SORT solutions
+
+    int max_time = 10; // 10 seconds max time
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, solutions.size());
+
+    while(std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() < max_time){
+        //std::cout << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "\n";
+        int parent_1_index = dist(rng);
+        int parent_2_index = dist(rng);
+        while(parent_2_index == parent_1_index) parent_2_index = dist(rng);
+
+        std::vector <int> parent_1 = solutions[parent_1_index];
+        std::vector <int> parent_2 = solutions[parent_2_index];
+
+        // perform crossover
+
+        
+        // perform mutation
+        // preform LS
+        // calculate cost
+        // replace the worst if better than it
+
+        // SORT solutions
+
+        end = std::chrono::steady_clock::now();
+    }
+
+}
+
 
 int main(){
     std::srand(148253);
 
-    std::string filename = "global_convexity.txt";
+    std::string filename = "hybrid.txt";
 
     if(filename != ""){
         std::ofstream ofs;
@@ -3006,9 +3060,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    dataset_paths.push_back("Data/TSPB.csv");
-    dataset_paths.push_back("Data/TSPC.csv");
-    dataset_paths.push_back("Data/TSPD.csv");
+    //dataset_paths.push_back("Data/TSPB.csv");
+    //dataset_paths.push_back("Data/TSPC.csv");
+    //dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
@@ -3021,7 +3075,8 @@ int main(){
         dataset_name += (char(65 + i));
         //calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
         //compare_MSLS_LSN(dataset, distance_matrix, filename, dataset_name);
-        global_convexity(dataset, distance_matrix, filename, dataset_name);
+        //global_convexity(dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(dataset, distance_matrix, filename, dataset_name);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
