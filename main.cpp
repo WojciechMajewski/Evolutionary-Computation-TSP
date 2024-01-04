@@ -2992,58 +2992,149 @@ void global_convexity(std::vector <std::vector <int>> & dataset, std::vector <st
     }
 }
 
-void run_hybrid(std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
-    int iterations = 100; // 1000
+void run_hybrid(int elite, int max_time, bool ls, std::vector <std::vector <int>> & dataset, std::vector <std::vector <int>> & distance_matrix, std::string filename = "", std::string dataset_name = "example"){
 
-    
-    std::vector <std::vector <int>> solutions;
-    std::vector <int> costs;
+    //std::vector <std::vector <int>> solutions;
+    //std::vector <int> costs;
+
+    std::vector <std::pair <int, std::vector <int>>> solutions;
 
     int i = 0;
-    while(i < iterations){
+    while(i < elite){
         std::vector <int> solution = random_solution(dataset, distance_matrix);
         int cost = get_path_cost(solution, dataset, distance_matrix);
-        if(std::find(costs.begin(), costs.end(), cost) != costs.end()) {
-            continue;
+        std::pair <int, std::vector <int>> entry;
+        entry.first = cost;
+        entry.second = solution;
+        // Find if already in solutions (by repeated cost):
+        int j = 0;
+        for(; j < solutions.size(); j++){
+            if(solutions[j].first == entry.first) break;
         }
-        solutions.push_back(solution);
-        costs.push_back(cost);
+        if(j < solutions.size()) continue;
+
+        solutions.push_back(entry);
         i++;
     }
-    std::cout << solutions.size() << "\n";
+    //std::cout << solutions.size() << "\n";
+    //std::cout << solutions[0].first << "\n";
+    //std::cout << solutions[solutions.size()-1].first << "\n";
 
     // SORT solutions
+    
+    std::sort(solutions.begin(), solutions.end());
+    //std::cout << solutions.size() << "\n";
+    //std::cout << solutions[0].first << "\n";
+    //std::cout << solutions[solutions.size()-1].first << "\n";
 
-    int max_time = 10; // 10 seconds max time
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0, solutions.size());
+    std::uniform_int_distribution<std::mt19937::result_type> elite_dist(0, elite-1);
+    std::uniform_int_distribution<std::mt19937::result_type> index_dist(0, solutions[0].second.size()-1);
+
 
     while(std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() < max_time){
         //std::cout << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "\n";
-        int parent_1_index = dist(rng);
-        int parent_2_index = dist(rng);
-        while(parent_2_index == parent_1_index) parent_2_index = dist(rng);
+        
 
-        std::vector <int> parent_1 = solutions[parent_1_index];
-        std::vector <int> parent_2 = solutions[parent_2_index];
+        int parent_1_index = elite_dist(rng);
+        int parent_2_index = elite_dist(rng);
+        while(parent_2_index == parent_1_index) parent_2_index = elite_dist(rng);
+
+        
+
+        std::vector <int> parent_1 = solutions[parent_1_index].second;
+        std::vector <int> parent_2 = solutions[parent_2_index].second;
+        std::vector <int> child;
 
         // perform crossover
 
-        
-        // perform mutation
-        // preform LS
-        // calculate cost
-        // replace the worst if better than it
+        // For each node in parent1:
+        // If not in parent2, skip both
+        // If in parent2, check if previos is the same
+        // If yes, add to child in this order
+        // If not, leave to add to child later
 
-        // SORT solutions
+        // For now, just add nodes existing in both in order of parent1
+
+        for(int k = 0; k < parent_1.size(); k++){
+            int j = 0;
+            for(; j < parent_2.size(); j++){
+                if(parent_2[j] == parent_1[k]){
+                    child.push_back(parent_1[k]);
+                    break;
+                }
+            }
+        }
+
+        // preform LS
+        
+        while(child.size() < parent_1.size()){
+            int node = index_dist(rng);
+            int j = 0;
+            for(; j < child.size(); j++){
+                if(child[j] == node){
+                    break;
+                }
+            }
+            if(j < child.size()) continue;
+            child.push_back(node);
+        }
+
+        // Random offset rotation???
+        if(ls){
+            child = local_search(true, true, child, dataset, distance_matrix);
+        }
+        
+       
+        // calculate cost
+        int child_cost = get_path_cost(child, dataset, distance_matrix);
+
+        // Do not put the child identical to an existing solution
+        int j = 0;
+        for(; j < solutions.size(); j++){
+            if(child_cost == solutions[j].first){
+                break;
+            }
+        }
+        if(j < solutions.size()) continue;
+
+        // replace the worst if better than it
+        if(solutions[solutions.size()-1].first > child_cost){
+            solutions[solutions.size()-1].first = child_cost;
+            solutions[solutions.size()-1].second = child;
+
+            // SORT solutions
+            
+            std::sort(solutions.begin(), solutions.end());
+        }
+
 
         end = std::chrono::steady_clock::now();
     }
 
+    //std::cout << "Best solution: " << solutions[0].first << "\n";
+    //for(int j = 0; j < solutions[0].second.size(); j++){
+    //   std::cout << solutions[0].second[j] << " ";
+    //}
+    //std::cout << "\n";
+
+
+    if(filename != ""){
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+        ofs << "\nDATASET " << dataset_name << "\n";
+        std::cout << "Best solution: " << solutions[0].first << "\n";
+        ofs << "Best solution: " << solutions[0].first << "\n";
+        for(int j = 0; j < solutions[0].second.size(); j++){
+            ofs << solutions[0].second[j] << " ";
+        }
+        ofs << "\n";
+        ofs.close();
+    }
 }
 
 
@@ -3060,9 +3151,9 @@ int main(){
 
     std::vector <std::string> dataset_paths;
     dataset_paths.push_back("Data/TSPA.csv");
-    //dataset_paths.push_back("Data/TSPB.csv");
-    //dataset_paths.push_back("Data/TSPC.csv");
-    //dataset_paths.push_back("Data/TSPD.csv");
+    dataset_paths.push_back("Data/TSPB.csv");
+    dataset_paths.push_back("Data/TSPC.csv");
+    dataset_paths.push_back("Data/TSPD.csv");
 
 
     for(int i = 0; i < dataset_paths.size(); i++){
@@ -3076,14 +3167,21 @@ int main(){
         //calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
         //compare_MSLS_LSN(dataset, distance_matrix, filename, dataset_name);
         //global_convexity(dataset, distance_matrix, filename, dataset_name);
-        run_hybrid(dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(20, 30, true, dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(60, 30, true, dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(100, 30, true, dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(20, 90, true, dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(60, 90, true, dataset, distance_matrix, filename, dataset_name);
+        run_hybrid(100, 90, true, dataset, distance_matrix, filename, dataset_name);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
         std::cout << "\nDataset " << dataset_name << ": " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s\n";
 
-        
+        std::vector <int> example = {124, 80, 31, 14, 111, 89, 94, 12, 73, 95, 169, 135, 51, 112, 72, 190, 98, 66, 156, 6, 24, 141, 87, 144, 154, 81, 180, 32, 62, 163, 74, 113, 61, 71, 20, 64, 185, 96, 27, 116, 147, 59, 143, 159, 164, 178, 19, 0, 149, 50, 43, 77, 4, 114, 121, 91, 161, 76, 145, 128, 132, 36, 55, 195, 22, 53, 117, 15, 108, 171, 21, 194, 79, 186, 127, 88, 153, 167, 101, 175, 192, 199, 174, 137, 41, 177, 1, 75, 189, 109, 119, 130, 152, 11, 160, 106, 48, 92, 26, 8};
+        std::cout << get_path_cost(example, dataset, distance_matrix) << "\n";
     }
+
     return 0;
 }
 
