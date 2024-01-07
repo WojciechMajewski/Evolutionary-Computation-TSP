@@ -3126,7 +3126,8 @@ void run_hybrid(int elite, int max_time, bool ls, std::vector <std::vector <int>
     if(filename != ""){
         std::ofstream ofs;
         ofs.open(filename, std::ios_base::app);
-        ofs << "\nDATASET " << dataset_name << "\n";
+        //ofs << "\nDATASET " << dataset_name << "\n";
+        ofs << "Elite: " << elite << "  Max time: " << max_time << "\n";
         std::cout << "Best solution: " << solutions[0].first << "\n";
         ofs << "Best solution: " << solutions[0].first << "\n";
         for(int j = 0; j < solutions[0].second.size(); j++){
@@ -3167,6 +3168,10 @@ int main(){
         //calculate_best_paths(dataset, distance_matrix, filename, dataset_name);
         //compare_MSLS_LSN(dataset, distance_matrix, filename, dataset_name);
         //global_convexity(dataset, distance_matrix, filename, dataset_name);
+        std::ofstream ofs;
+        ofs.open(filename, std::ios_base::app);
+        ofs << "\nDATASET " << dataset_name << "\n";
+        ofs.close();
         run_hybrid(20, 30, true, dataset, distance_matrix, filename, dataset_name);
         run_hybrid(60, 30, true, dataset, distance_matrix, filename, dataset_name);
         run_hybrid(100, 30, true, dataset, distance_matrix, filename, dataset_name);
@@ -3176,10 +3181,6 @@ int main(){
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-        std::cout << "\nDataset " << dataset_name << ": " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s\n";
-
-        std::vector <int> example = {124, 80, 31, 14, 111, 89, 94, 12, 73, 95, 169, 135, 51, 112, 72, 190, 98, 66, 156, 6, 24, 141, 87, 144, 154, 81, 180, 32, 62, 163, 74, 113, 61, 71, 20, 64, 185, 96, 27, 116, 147, 59, 143, 159, 164, 178, 19, 0, 149, 50, 43, 77, 4, 114, 121, 91, 161, 76, 145, 128, 132, 36, 55, 195, 22, 53, 117, 15, 108, 171, 21, 194, 79, 186, 127, 88, 153, 167, 101, 175, 192, 199, 174, 137, 41, 177, 1, 75, 189, 109, 119, 130, 152, 11, 160, 106, 48, 92, 26, 8};
-        std::cout << get_path_cost(example, dataset, distance_matrix) << "\n";
     }
 
     return 0;
