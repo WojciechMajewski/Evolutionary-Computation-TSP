@@ -3129,9 +3129,17 @@ void run_hybrid(int elite, int max_time, bool ls, std::vector <std::vector <int>
         //ofs << "\nDATASET " << dataset_name << "\n";
         ofs << "Elite: " << elite << "  Max time: " << max_time << "\n";
         std::cout << "Best solution: " << solutions[0].first << "\n";
-        ofs << "Best solution: " << solutions[0].first << "\n";
+        ofs << "Best, average, worst" << "\n";
+
+        float average = 0;
+        for(int j = 0; j < elite; j++){
+            average += solutions[j].first;
+        }
+        average /= elite;
+
+        ofs << solutions[0].first << " " << average << " " << solutions[elite - 1].first << "\n";
         for(int j = 0; j < solutions[0].second.size(); j++){
-            ofs << solutions[0].second[j] << " ";
+            ofs << solutions[0].second[j] << ", ";
         }
         ofs << "\n";
         ofs.close();
